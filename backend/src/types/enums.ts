@@ -7,3 +7,8 @@ export enum RollOverStatus {
   ENABLED = "enabled",
   DISABLED = "disabled"
 }
+
+export enum SymbolType {
+  FUTURE = "future",
+  OPTIONS = "options"
+}

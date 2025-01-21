@@ -1,6 +1,6 @@
 import { error } from "console";
 import Strategy from "../models/strategy.model";
-import { StrategyStatus, RollOverStatus } from "../types/enums";
+import { StrategyStatus, RollOverStatus, SymbolType } from "../types/enums";
 import { validateStrategy } from "../validators/strategy.validation";
 import mongoose from "mongoose";
 
@@ -8,10 +8,12 @@ import mongoose from "mongoose";
 export interface IStrategy {
   name: string;
   description: string;
+  symbol: string;
+  symbolType: SymbolType;
   status: StrategyStatus;
   nextExpiry: Date;
-  rollOverStatus: RollOverStatus;
   rollOverOn: Date;
+  rollOverStatus: RollOverStatus;
 }
 
 // Controller Function

@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { StrategyStatus, RollOverStatus } from "../types/enums";
+import { StrategyStatus, RollOverStatus, SymbolType } from "../types/enums";
 
 const strategySchema = new Schema(
   {
@@ -8,9 +8,19 @@ const strategySchema = new Schema(
       required: true,
       trim: true
     },
+
     description: {
       type: String,
       required: true
+    },
+    symbol: {
+      type: String,
+      required: true
+    },
+    symbolType: {
+      type: String,
+      enum: Object.values(SymbolType),
+      default: SymbolType.FUTURE
     },
     status: {
       type: String,
@@ -21,14 +31,15 @@ const strategySchema = new Schema(
       type: Date,
       required: true
     },
+    rollOverOn: {
+      type: Date,
+      required: true
+    },
+
     rollOverStatus: {
       type: String,
       enum: Object.values(RollOverStatus),
       default: RollOverStatus.DISABLED
-    },
-    rollOverOn: {
-      type: Date,
-      required: true
     }
   },
   {

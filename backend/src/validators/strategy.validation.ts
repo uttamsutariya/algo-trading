@@ -1,8 +1,8 @@
-import { StrategyStatus, RollOverStatus } from "../types/enums";
+import { StrategyStatus, RollOverStatus, SymbolType } from "../types/enums";
 import { IStrategy } from "../controllers/strategy.controller";
 
 export const validateStrategy = (
-  { name, description, status, nextExpiry, rollOverStatus, rollOverOn }: Partial<IStrategy>,
+  { name, description, status, nextExpiry, rollOverOn, rollOverStatus, symbol, symbolType }: Partial<IStrategy>,
   isCreate: boolean = false
 ): { isValid: boolean; error?: string; validatedData: Partial<IStrategy> } => {
   const validatedData: Partial<IStrategy> = {};
@@ -106,5 +106,34 @@ export const validateStrategy = (
     }
   }
 
+  // Validate `symbol`
+  if (isCreate || symbol !== undefined) {
+    if (!symbol || typeof symbol !== "string") {
+      return {
+        isValid: false,
+        error: "Invalid input: 'symbol' is required and must be a string.",
+        validatedData
+      };
+    } else {
+      validatedData.symbol = symbol;
+    }
+  }
+
+  // Validate `symbolType`
+
+  if (symbolType !== undefined) {
+    if (!Object.values(SymbolType).includes(symbolType)) {
+      return {
+        isValid: false,
+        error: `Invalid symbolType. Allowed values: ${Object.values(SymbolType).join(", ")}.`,
+        validatedData
+      };
+    } else {
+      validatedData.symbolType = symbolType;
+    }
+  } else if (isCreate) {
+    // No need to set default here; rely on Mongoose to handle it
+    validatedData.symbolType = SymbolType.FUTURE;
+  }
   return { isValid: true, validatedData };
 };
