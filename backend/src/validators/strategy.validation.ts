@@ -1,139 +1,219 @@
-import { StrategyStatus, RollOverStatus, SymbolType } from "../types/enums";
-import { IStrategy } from "../rest/controllers/strategy.controller";
+import { StrategyStatus, BrokersAvailable } from "../types/enums";
+import { IStrategyInput } from "../rest/controllers/strategy.controller";
+import mongoose from "mongoose";
+import Instrument from "../models/instruments.model";
+import Strategy from "../models/strategy.model";
 
-export const validateStrategy = (
-  { name, description, status, nextExpiry, rollOverOn, rollOverStatus, symbol, symbolType }: Partial<IStrategy>,
-  isCreate: boolean = false
-): { isValid: boolean; error?: string; validatedData: Partial<IStrategy> } => {
-  const validatedData: Partial<IStrategy> = {};
+type ValidationResult = {
+  isValid: boolean;
+  error?: string;
+  validatedData: Partial<IStrategyInput>;
+};
 
-  // Validate `name`
-  if (isCreate || name !== undefined) {
-    if (!name || typeof name !== "string") {
+// Helper function for common validations
+const validateSymbolAndRollOver = async (
+  symbol: mongoose.Types.ObjectId,
+  rollOverOn: Date | null | undefined
+): Promise<{ isValid: boolean; error?: string; instrumentData?: any }> => {
+  // Validate symbol
+  if (!mongoose.Types.ObjectId.isValid(symbol)) {
+    return {
+      isValid: false,
+      error: "Invalid input: 'symbol' must be a valid instrument ID."
+    };
+  }
+
+  // Fetch and validate instrument
+  const instrumentData = await Instrument.findById(symbol);
+  if (!instrumentData) {
+    return {
+      isValid: false,
+      error: "Invalid input: The specified instrument does not exist."
+    };
+  }
+
+  // Validate rollOverOn if provided
+  if (rollOverOn) {
+    const parsedRollOverOn = new Date(rollOverOn);
+    if (isNaN(parsedRollOverOn.getTime())) {
       return {
         isValid: false,
-        error: "Invalid input: 'name' is required and must be a string.",
-        validatedData // Ensure this is included
+        error: "Invalid date format for 'rollOverOn'. Use YYYY-MM-DD format or null to disable rollover."
       };
-    } else {
-      validatedData.name = name;
+    }
+
+    const expiryDate = new Date(instrumentData.expiry);
+    const currentDate = new Date();
+
+    // Check if rollover date is in the past
+    if (parsedRollOverOn < currentDate) {
+      return {
+        isValid: false,
+        error: "Roll over date cannot be in the past."
+      };
+    }
+
+    // Check if rollover date is after expiry
+    if (parsedRollOverOn >= expiryDate) {
+      return {
+        isValid: false,
+        error: "Roll over date must be before the instrument's expiry date."
+      };
     }
   }
 
-  // Validate `description`
-  if (isCreate || description !== undefined) {
-    if (!description || typeof description !== "string") {
+  return { isValid: true, instrumentData };
+};
+
+// Validation for creating a new strategy
+export const validateCreateStrategy = async (data: IStrategyInput): Promise<ValidationResult> => {
+  const validatedData: Partial<IStrategyInput> = {};
+
+  // Required fields check
+  if (!data.name || typeof data.name !== "string") {
+    return {
+      isValid: false,
+      error: "Invalid input: 'name' is required and must be a string.",
+      validatedData
+    };
+  }
+  validatedData.name = data.name;
+
+  if (!data.description || typeof data.description !== "string") {
+    return {
+      isValid: false,
+      error: "Invalid input: 'description' is required and must be a string.",
+      validatedData
+    };
+  }
+  validatedData.description = data.description;
+
+  if (!data.symbol) {
+    return {
+      isValid: false,
+      error: "Invalid input: 'symbol' is required.",
+      validatedData
+    };
+  }
+
+  // Validate symbol and rollover
+  const symbolValidation = await validateSymbolAndRollOver(data.symbol, data.rollOverOn);
+  if (!symbolValidation.isValid) {
+    return {
+      isValid: false,
+      error: symbolValidation.error,
+      validatedData
+    };
+  }
+
+  validatedData.symbol = new mongoose.Types.ObjectId(data.symbol);
+  validatedData.rollOverOn = data.rollOverOn || null;
+
+  // Validate broker
+  if (!data.broker || !Object.values(BrokersAvailable).includes(data.broker)) {
+    return {
+      isValid: false,
+      error: `Invalid broker. Allowed values: ${Object.values(BrokersAvailable).join(", ")}.`,
+      validatedData
+    };
+  }
+  validatedData.broker = data.broker;
+
+  // Set default status if not provided
+  validatedData.status = data.status || StrategyStatus.STOPPED;
+
+  return { isValid: true, validatedData };
+};
+
+// Validation for updating an existing strategy
+export const validateUpdateStrategy = async (
+  data: Partial<IStrategyInput>,
+  id: mongoose.Types.ObjectId
+): Promise<ValidationResult> => {
+  const validatedData: Partial<IStrategyInput> = {};
+
+  // Validate optional fields if provided
+  if (data.name !== undefined) {
+    if (typeof data.name !== "string" || !data.name.trim()) {
       return {
         isValid: false,
-        error: "Invalid input: 'description' is required and must be a string.",
-        validatedData // Ensure this is included
+        error: "Invalid input: 'name' must be a non-empty string.",
+        validatedData
       };
+    }
+    validatedData.name = data.name;
+  }
+
+  if (data.description !== undefined) {
+    if (typeof data.description !== "string" || !data.description.trim()) {
+      return {
+        isValid: false,
+        error: "Invalid input: 'description' must be a non-empty string.",
+        validatedData
+      };
+    }
+    validatedData.description = data.description;
+  }
+
+  // Validate symbol and rollover if either is provided
+  if (data.symbol !== undefined || data.rollOverOn !== undefined) {
+    let symbolToValidate: mongoose.Types.ObjectId;
+
+    if (data.symbol) {
+      symbolToValidate = new mongoose.Types.ObjectId(data.symbol);
     } else {
-      validatedData.description = description;
+      // Get the existing strategy's symbol if not provided in update
+      const existingStrategy = await Strategy.findById(id);
+      if (!existingStrategy) {
+        return {
+          isValid: false,
+          error: "Strategy not found",
+          validatedData
+        };
+      }
+      symbolToValidate = existingStrategy.symbol;
+    }
+
+    const symbolValidation = await validateSymbolAndRollOver(symbolToValidate, data.rollOverOn);
+    if (!symbolValidation.isValid) {
+      return {
+        isValid: false,
+        error: symbolValidation.error,
+        validatedData
+      };
+    }
+
+    if (data.symbol) {
+      validatedData.symbol = symbolToValidate;
+    }
+    if (data.rollOverOn !== undefined) {
+      validatedData.rollOverOn = data.rollOverOn;
     }
   }
 
-  // Validate `status`
-  if (status !== undefined) {
-    if (!Object.values(StrategyStatus).includes(status)) {
+  // Validate status if provided
+  if (data.status !== undefined) {
+    if (!Object.values(StrategyStatus).includes(data.status)) {
       return {
         isValid: false,
         error: `Invalid status. Allowed values: ${Object.values(StrategyStatus).join(", ")}.`,
-        validatedData // Ensure this is included
-      };
-    } else {
-      validatedData.status = status;
-    }
-  }
-
-  // Validate `rollOverStatus`
-  if (rollOverStatus !== undefined) {
-    if (!Object.values(RollOverStatus).includes(rollOverStatus)) {
-      return {
-        isValid: false,
-        error: `Invalid rollOverStatus. Allowed values: ${Object.values(RollOverStatus).join(", ")}.`,
-        validatedData // Ensure this is included
-      };
-    } else {
-      validatedData.rollOverStatus = rollOverStatus;
-    }
-  }
-
-  // Validate `nextExpiry`
-  if (isCreate || nextExpiry !== undefined) {
-    if (!nextExpiry) {
-      return { isValid: false, error: "'nextExpiry' is required.", validatedData }; // Ensure this is included
-    } else {
-      const parsedNextExpiry = new Date(nextExpiry);
-      if (isNaN(parsedNextExpiry.getTime())) {
-        return {
-          isValid: false,
-          error: "Invalid date format for 'nextExpiry'. Use YYYY-MM-DD format.",
-          validatedData // Ensure this is included
-        };
-      } else {
-        validatedData.nextExpiry = parsedNextExpiry; // Save as Date object
-      }
-    }
-  }
-
-  // Validate `rollOverOn`
-  if (isCreate || rollOverOn !== undefined) {
-    if (!rollOverOn) {
-      return { isValid: false, error: "'rollOverOn' is required.", validatedData }; // Ensure this is included
-    } else {
-      const parsedRollOverOn = new Date(rollOverOn);
-      if (isNaN(parsedRollOverOn.getTime())) {
-        return {
-          isValid: false,
-          error: "Invalid date format for 'rollOverOn'. Use YYYY-MM-DD format.",
-          validatedData // Ensure this is included
-        };
-      } else {
-        validatedData.rollOverOn = parsedRollOverOn; // Save as Date object
-
-        // Logical Validation: rollOverOn should be on or before nextExpiry
-        if (validatedData.nextExpiry) {
-          if (parsedRollOverOn > validatedData.nextExpiry) {
-            return {
-              isValid: false,
-              error: "'rollOverOn' must be on or before 'nextExpiry'.",
-              validatedData // Ensure this is included
-            };
-          }
-        }
-      }
-    }
-  }
-
-  // Validate `symbol`
-  if (isCreate || symbol !== undefined) {
-    if (!symbol || typeof symbol !== "string") {
-      return {
-        isValid: false,
-        error: "Invalid input: 'symbol' is required and must be a string.",
         validatedData
       };
-    } else {
-      validatedData.symbol = symbol;
     }
+    validatedData.status = data.status;
   }
 
-  // Validate `symbolType`
-
-  if (symbolType !== undefined) {
-    if (!Object.values(SymbolType).includes(symbolType)) {
+  // Validate broker if provided
+  if (data.broker !== undefined) {
+    if (!Object.values(BrokersAvailable).includes(data.broker)) {
       return {
         isValid: false,
-        error: `Invalid symbolType. Allowed values: ${Object.values(SymbolType).join(", ")}.`,
+        error: `Invalid broker. Allowed values: ${Object.values(BrokersAvailable).join(", ")}.`,
         validatedData
       };
-    } else {
-      validatedData.symbolType = symbolType;
     }
-  } else if (isCreate) {
-    // No need to set default here; rely on Mongoose to handle it
-    validatedData.symbolType = SymbolType.FUTURE;
+    validatedData.broker = data.broker;
   }
+
   return { isValid: true, validatedData };
 };

@@ -1,29 +1,24 @@
 import Strategy from "../../models/strategy.model";
-import { StrategyStatus, RollOverStatus, SymbolType } from "../../types/enums";
-import { validateStrategy } from "../../validators/strategy.validation";
+import { StrategyStatus, BrokersAvailable } from "../../types/enums";
+import { validateCreateStrategy, validateUpdateStrategy } from "../../validators/strategy.validation";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 
 // Interface for Request Body
-export interface IStrategy {
+export interface IStrategyInput {
   name: string;
   description: string;
-  symbol: string;
-  symbolType: SymbolType;
+  symbol: mongoose.Types.ObjectId;
   status: StrategyStatus;
-  nextExpiry: Date;
-  rollOverOn: Date;
-  rollOverStatus: RollOverStatus;
+  rollOverOn: Date | null;
+  broker: BrokersAvailable;
 }
-
-// Controller Function
 
 //......................  create  strategy ....................................................//
 
 export const createStrategy = async (req: Request, res: Response) => {
   try {
-    // Validate the request body with `isCreate = true`
-    const { isValid, error, validatedData } = validateStrategy(req.body, true);
+    const { isValid, error, validatedData } = await validateCreateStrategy(req.body);
 
     if (!isValid) {
       // Return the validation error
@@ -34,8 +29,11 @@ export const createStrategy = async (req: Request, res: Response) => {
     const newStrategy = new Strategy(validatedData);
     const savedStrategy = await newStrategy.save();
 
+    // Populate the instrument details before sending response
+    const populatedStrategy = await savedStrategy.populate("symbol");
+
     // Respond with the created strategy
-    return res.status(201).json(savedStrategy);
+    return res.status(201).json(populatedStrategy);
   } catch (err) {
     const error = err as Error; // Type assertion
 
@@ -50,16 +48,22 @@ export const updateStrategy = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Validate the request body with `isCreate = false`
-    const { isValid, error, validatedData } = validateStrategy(req.body, false);
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid strategy ID." });
+    }
+
+    const { isValid, error, validatedData } = await validateUpdateStrategy(
+      req.body,
+      id as unknown as mongoose.Types.ObjectId
+    );
 
     if (!isValid) {
       // Return the validation error
       return res.status(400).json({ error });
     }
 
-    // Update the strategy in the database
-    const updatedStrategy = await Strategy.findByIdAndUpdate(id, validatedData, { new: true });
+    // Update and populate the instrument details
+    const updatedStrategy = await Strategy.findByIdAndUpdate(id, validatedData, { new: true }).populate("symbol");
 
     if (!updatedStrategy) {
       return res.status(404).json({ error: "Strategy not found." });
@@ -78,8 +82,8 @@ export const updateStrategy = async (req: Request, res: Response) => {
 
 export const viewAllStrategies = async (req: Request, res: Response) => {
   try {
-    // Fetch all strategies from the database
-    const strategies = await Strategy.find();
+    // Fetch all strategies and populate instrument details
+    const strategies = await Strategy.find().populate("symbol");
 
     // If no strategies exist, return a 404 response
     if (strategies.length === 0) {
@@ -105,8 +109,8 @@ export const viewStrategy = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid strategy ID." });
     }
 
-    // Fetch the strategy by ID
-    const strategy = await Strategy.findById(id);
+    // Fetch the strategy and populate instrument details
+    const strategy = await Strategy.findById(id).populate("symbol");
 
     // Handle case when the strategy is not found
     if (!strategy) {

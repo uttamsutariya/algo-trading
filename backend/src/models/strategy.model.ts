@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { StrategyStatus, RollOverStatus, SymbolType } from "../types/enums";
+import { BrokersAvailable, StrategyStatus } from "../types/enums";
 
 const strategySchema = new Schema(
   {
@@ -8,38 +8,30 @@ const strategySchema = new Schema(
       required: true,
       trim: true
     },
-
     description: {
       type: String,
       required: true
     },
     symbol: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "Instrument",
       required: true
-    },
-    symbolType: {
-      type: String,
-      enum: Object.values(SymbolType),
-      default: SymbolType.FUTURE
     },
     status: {
       type: String,
       enum: Object.values(StrategyStatus),
-      default: StrategyStatus.STOPPED
-    },
-    nextExpiry: {
-      type: Date,
-      required: true
+      default: StrategyStatus.RUNNING
     },
     rollOverOn: {
       type: Date,
-      required: true
+      required: false,
+      default: null
     },
-
-    rollOverStatus: {
+    broker: {
       type: String,
-      enum: Object.values(RollOverStatus),
-      default: RollOverStatus.DISABLED
+      enum: Object.values(BrokersAvailable),
+      default: BrokersAvailable.FYERS,
+      required: true
     }
   },
   {

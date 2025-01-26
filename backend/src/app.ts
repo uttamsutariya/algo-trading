@@ -6,6 +6,8 @@ import cors from "cors";
 import { connectDatabase } from "./config/database";
 import strategyRoutes from "./rest/routes/strategy.routes";
 import instrumentsRoutes from "./rest/routes/instruments.routes";
+import { webhookController } from "./rest/controllers/webhook.controller";
+
 import "./cron/instrumentsUpdate"; // Import the cron job to update symbols daily
 
 const app: Express = express();
@@ -20,6 +22,7 @@ app.get("/", (req: Request, res: Response) => {
 
 app.use("/api/strategies", strategyRoutes);
 app.use("/api/instruments", instrumentsRoutes);
+app.use("/api/webhook", webhookController); // webhook processor
 
 // Initialize server
 const startServer = async () => {

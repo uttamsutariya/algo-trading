@@ -3,9 +3,9 @@ export enum StrategyStatus {
   STOPPED = "stopped"
 }
 
-export enum RollOverStatus {
-  ENABLED = "enabled",
-  DISABLED = "disabled"
+export enum BrokersAvailable {
+  // can extend if new broker added
+  FYERS = "fyers"
 }
 
 export enum SymbolType {
