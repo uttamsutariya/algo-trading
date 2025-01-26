@@ -43,7 +43,8 @@ const strategySchema = new Schema(
     }
   },
   {
-    timestamps: true // This will automatically add createdAt and updatedAt fields
+    timestamps: true,
+    versionKey: false
   }
 );
 

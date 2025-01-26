@@ -1,11 +1,12 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express, { Express, Request, Response } from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import { connectDatabase } from "./config/database";
-import strategyRoutes from "./routes/strategy.routes";
-
-// Load environment variables
-dotenv.config();
+import strategyRoutes from "./rest/routes/strategy.routes";
+import instrumentsRoutes from "./rest/routes/instruments.routes";
+import "./cron/instrumentsUpdate"; // Import the cron job to update symbols daily
 
 const app: Express = express();
 const port = process.env.PORT || 3200;
@@ -13,13 +14,12 @@ const port = process.env.PORT || 3200;
 app.use(cors());
 app.use(express.json());
 
-// Basic health check route
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({ status: "ok" });
 });
 
-// Use the strategy routes
 app.use("/api/strategies", strategyRoutes);
+app.use("/api/instruments", instrumentsRoutes);
 
 // Initialize server
 const startServer = async () => {

@@ -1,8 +1,8 @@
-import { error } from "console";
-import Strategy from "../models/strategy.model";
-import { StrategyStatus, RollOverStatus, SymbolType } from "../types/enums";
-import { validateStrategy } from "../validators/strategy.validation";
+import Strategy from "../../models/strategy.model";
+import { StrategyStatus, RollOverStatus, SymbolType } from "../../types/enums";
+import { validateStrategy } from "../../validators/strategy.validation";
 import mongoose from "mongoose";
+import { Request, Response } from "express";
 
 // Interface for Request Body
 export interface IStrategy {
@@ -20,15 +20,14 @@ export interface IStrategy {
 
 //......................  create  strategy ....................................................//
 
-export const createStrategy = async (req: any, res: any) => {
+export const createStrategy = async (req: Request, res: Response) => {
   try {
     // Validate the request body with `isCreate = true`
     const { isValid, error, validatedData } = validateStrategy(req.body, true);
 
     if (!isValid) {
       // Return the validation error
-      res.status(400).json({ error });
-      return;
+      return res.status(400).json({ error });
     }
 
     // Create and save the strategy
@@ -36,18 +35,18 @@ export const createStrategy = async (req: any, res: any) => {
     const savedStrategy = await newStrategy.save();
 
     // Respond with the created strategy
-    res.status(201).json(savedStrategy);
+    return res.status(201).json(savedStrategy);
   } catch (err) {
     const error = err as Error; // Type assertion
 
     // Handle unexpected errors
-    res.status(500).json({ error: "Failed to create strategy", details: error.message });
+    return res.status(500).json({ error: "Failed to create strategy", details: error.message });
   }
 };
 
 //......................  update strategy ....................................................//
 
-export const updateStrategy = async (req: any, res: any) => {
+export const updateStrategy = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -56,30 +55,28 @@ export const updateStrategy = async (req: any, res: any) => {
 
     if (!isValid) {
       // Return the validation error
-      res.status(400).json({ error });
-      return;
+      return res.status(400).json({ error });
     }
 
     // Update the strategy in the database
     const updatedStrategy = await Strategy.findByIdAndUpdate(id, validatedData, { new: true });
 
     if (!updatedStrategy) {
-      res.status(404).json({ error: "Strategy not found." });
-      return;
+      return res.status(404).json({ error: "Strategy not found." });
     }
 
     // Respond with the updated strategy
-    res.status(200).json(updatedStrategy);
+    return res.status(200).json(updatedStrategy);
   } catch (err) {
     const error = err as Error; // Type assertion
     // Handle unexpected errors
-    res.status(500).json({ error: "Failed to update strategy", details: error.message });
+    return res.status(500).json({ error: "Failed to update strategy", details: error.message });
   }
 };
 
 //......................  view strategy ....................................................//
 
-export const viewAllStrategies = async (req: any, res: any) => {
+export const viewAllStrategies = async (req: Request, res: Response) => {
   try {
     // Fetch all strategies from the database
     const strategies = await Strategy.find();
@@ -90,16 +87,16 @@ export const viewAllStrategies = async (req: any, res: any) => {
     }
 
     // Respond with the list of strategies
-    res.status(200).json(strategies);
+    return res.status(200).json(strategies);
   } catch (err) {
     const error = err as Error; // Type assertion
-    res.status(500).json({ error: "Failed to retrieve strategies.", details: error.message });
+    return res.status(500).json({ error: "Failed to retrieve strategies.", details: error.message });
   }
 };
 
 //......................  view strategy by id ....................................................//
 
-export const viewStrategy = async (req: any, res: any) => {
+export const viewStrategy = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -117,17 +114,17 @@ export const viewStrategy = async (req: any, res: any) => {
     }
 
     // Respond with the found strategy
-    res.status(200).json(strategy);
+    return res.status(200).json(strategy);
   } catch (err) {
     const error = err as Error; // Type assertion
 
-    res.status(500).json({ error: "Failed to retrieve strategy.", details: error.message });
+    return res.status(500).json({ error: "Failed to retrieve strategy.", details: error.message });
   }
 };
 
 //................... delete strategy by id ................................................//
 
-export const deleteStrategy = async (req: any, res: any) => {
+export const deleteStrategy = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -145,10 +142,10 @@ export const deleteStrategy = async (req: any, res: any) => {
     }
 
     // Respond with success message
-    res.status(200).json({ message: "Strategy successfully deleted.", strategy: deletedStrategy });
+    return res.status(200).json({ message: "Strategy successfully deleted.", strategy: deletedStrategy });
   } catch (err) {
     const error = err as Error; // Type assertion
 
-    res.status(500).json({ error: "Failed to delete strategy.", details: error.message });
+    return res.status(500).json({ error: "Failed to delete strategy.", details: error.message });
   }
 };

@@ -1,5 +1,5 @@
 import { StrategyStatus, RollOverStatus, SymbolType } from "../types/enums";
-import { IStrategy } from "../controllers/strategy.controller";
+import { IStrategy } from "../rest/controllers/strategy.controller";
 
 export const validateStrategy = (
   { name, description, status, nextExpiry, rollOverOn, rollOverStatus, symbol, symbolType }: Partial<IStrategy>,
