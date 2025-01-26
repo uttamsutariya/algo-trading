@@ -7,6 +7,7 @@ import { connectDatabase } from "./config/database";
 import strategyRoutes from "./rest/routes/strategy.routes";
 import instrumentsRoutes from "./rest/routes/instruments.routes";
 import { webhookController } from "./rest/controllers/webhook.controller";
+import { TradeTaskWorker } from "./queue/TradeTaskWorker";
 
 import "./cron/instrumentsUpdate"; // Import the cron job to update symbols daily
 
@@ -29,6 +30,18 @@ const startServer = async () => {
   try {
     // Connect to MongoDB
     await connectDatabase();
+
+    // Initialize trade task worker
+    const tradeWorker = new TradeTaskWorker();
+    await tradeWorker
+      .start()
+      .then(() => {
+        console.log("TradeTaskWorker started");
+      })
+      .catch((error) => {
+        console.error("Failed to start trade worker:", error);
+        process.exit(1);
+      });
 
     // Start listening for requests
     app.listen(port, () => {

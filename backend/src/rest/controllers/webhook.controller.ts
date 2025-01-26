@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import Strategy from "../../models/strategy.model";
+import { QueueClient } from "../../queue/QueueClient";
+import { TradeTask } from "../../types/queue.types";
 
 interface WebhookRequest {
   strategyId: string;
@@ -79,20 +81,25 @@ export const webhookController = async (req: Request, res: Response) => {
 
     const { strategyId, qty, side } = validation.validatedData;
 
-    // Log the validated data
-    console.log("Webhook request received:", {
+    // Create trade task
+    const tradeTask: TradeTask = {
       strategyId,
       qty,
       side,
       timestamp: new Date().toISOString()
-    });
+    };
 
-    // TODO: Process the webhook request with validated data
+    // Add task to queue
+    const queueClient = QueueClient.getInstance();
+    const taskId = await queueClient.addTask(tradeTask);
 
     return res.status(200).json({
       status: "success",
-      message: "Webhook processed successfully",
-      data: validation.validatedData
+      message: "Trade task queued successfully",
+      data: {
+        taskId,
+        ...validation.validatedData
+      }
     });
   } catch (err) {
     const error = err as Error;
