@@ -1,6 +1,9 @@
 import { QueueClient } from "./QueueClient";
 import { QueueTask } from "../types/queue.types";
 import Strategy from "../models/strategy.model";
+import { FyersBroker } from "../brokersApi/FyersBroker";
+import config from "../config/broker.config";
+import Instrument from "../models/instruments.model";
 
 export class TradeTaskWorker {
   private queueClient: QueueClient;
@@ -47,22 +50,43 @@ export class TradeTaskWorker {
 
   private async processTask(task: QueueTask): Promise<void> {
     try {
-      const strategy = await Strategy.findById(task.data.strategyId).populate("symbol");
+      const strategy = await Strategy.findById(task.data.strategyId);
       if (!strategy) {
         throw new Error(`Strategy not found: ${task.data.strategyId}`);
       }
 
-      // TODO: Implement actual trade execution logic here
-      console.log(`Processing trade for strategy ${strategy.name}:`, {
-        symbol: strategy.symbol,
+      const symbol = await Instrument.findById(strategy.symbol);
+
+      if (!symbol) {
+        throw new Error(`Symbol not found: ${strategy.symbol}`);
+      }
+
+      console.log(strategy);
+      console.log(symbol?.brokerSymbols?.fyers);
+
+      // Initialize broker based on strategy's broker
+      const broker = FyersBroker.getInstance({
+        appId: config.fyers.appId,
+        accessToken: config.fyers.accessToken,
+        redirectUrl: config.fyers.redirectUrl
+      });
+      await broker.initialize();
+
+      // Place order
+      const orderResponse = await broker.placeOrder({
+        symbol: symbol?.brokerSymbols?.fyers!,
+        qty: task.data.qty,
         side: task.data.side,
-        qty: task.data.qty
+        productType: "MARGIN",
+        orderTag: `strategy_${strategy._id}`
       });
 
-      // Simulate processing time
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (!orderResponse.success) {
+        throw new Error(orderResponse.error || "Order placement failed");
+      }
 
       await this.queueClient.completeTask(task.id);
+      console.log(`Order placed successfully: ${orderResponse.orderId}`);
     } catch (error) {
       if (error instanceof Error) {
         await this.queueClient.completeTask(task.id, error.message);
