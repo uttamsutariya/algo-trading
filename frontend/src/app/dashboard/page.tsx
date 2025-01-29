@@ -8,8 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StrategyTable } from "@/app/dashboard/components/strategy-table";
 import { AddStrategyModal } from "@/app/dashboard/components/add-strategy-modal";
 import { Search, Plus } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
 
 export default function DashboardPage() {
+  const { data: session } = useSession({
+    required: true,
+    onUnauthenticated() {
+      redirect("/login");
+    }
+  });
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { setSearchQuery, setStatusFilter, statusFilter } = useStrategyStore();
 
