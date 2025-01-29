@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useStrategyStore } from "@/store/useStrategyStore";
 import { StrategyForm } from "./strategy-form";
 import type { StrategyFormValues } from "./strategy-form-schema";
+import { useInstruments } from "@/hooks/useInstruments";
 
 interface AddStrategyModalProps {
   open: boolean;
@@ -10,11 +11,14 @@ interface AddStrategyModalProps {
 
 export function AddStrategyModal({ open, onOpenChange }: AddStrategyModalProps) {
   const addStrategy = useStrategyStore((state) => state.addStrategy);
+  const { data: instruments, isLoading, isError } = useInstruments();
 
   const onSubmit = (values: StrategyFormValues) => {
+    console.log("values", values);
     addStrategy({
       ...values,
-      status: "stopped"
+      status: "running",
+      rollOverOn: values.rollOverOn || undefined
     });
     onOpenChange(false);
   };
@@ -25,7 +29,13 @@ export function AddStrategyModal({ open, onOpenChange }: AddStrategyModalProps) 
         <DialogHeader>
           <DialogTitle>Add New Strategy</DialogTitle>
         </DialogHeader>
-        <StrategyForm onSubmit={onSubmit} submitLabel="Add Strategy" />
+        {isLoading ? (
+          <div>Loading instruments...</div>
+        ) : isError ? (
+          <div>Error loading instruments</div>
+        ) : (
+          <StrategyForm onSubmit={onSubmit} submitLabel="Add Strategy" />
+        )}
       </DialogContent>
     </Dialog>
   );

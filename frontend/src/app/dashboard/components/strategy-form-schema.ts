@@ -1,15 +1,14 @@
 import * as z from "zod";
-import { Symbol, SymbolType } from "@/types/strategy";
+import { SymbolType } from "@/types/strategy";
 
 export const strategyFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  symbol: z.nativeEnum(Symbol),
-  symbolType: z.nativeEnum(SymbolType),
-  nextExpiry: z.date(),
-  rollOverStatus: z.enum(["enabled", "disabled"]),
-  rollOverOn: z.date(),
-  rollOverBeforeDays: z.number().min(1).max(10)
+  name: z.string().min(1, "Name is required"),
+  description: z.string().min(1, "Description is required"),
+  symbol: z.object({
+    name: z.string(),
+    _id: z.string()
+  }),
+  rollOverOn: z.date().optional()
 });
 
 export type StrategyFormValues = z.infer<typeof strategyFormSchema>;

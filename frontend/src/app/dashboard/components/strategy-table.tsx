@@ -32,8 +32,6 @@ export function StrategyTable() {
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Next Expiry</TableHead>
-            <TableHead>Roll Over Status</TableHead>
             <TableHead>Roll Over On</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -53,18 +51,7 @@ export function StrategyTable() {
                   }
                 />
               </TableCell>
-              <TableCell>{format(strategy.nextExpiry, "MMM dd, yyyy")}</TableCell>
-              <TableCell>
-                <Switch
-                  checked={strategy.rollOverStatus === "enabled"}
-                  onCheckedChange={(checked: boolean) =>
-                    updateStrategy(strategy.id, {
-                      rollOverStatus: checked ? "enabled" : "disabled"
-                    })
-                  }
-                />
-              </TableCell>
-              <TableCell>{format(strategy.rollOverOn, "MMM dd, yyyy")}</TableCell>
+              <TableCell>{strategy.rollOverOn ? format(strategy.rollOverOn, "MMM dd, yyyy") : "N/A"}</TableCell>
               <TableCell>
                 <div className="flex gap-2">
                   <Button variant="ghost" size="icon" onClick={() => setEditingStrategy(strategy)}>

@@ -1,4 +1,4 @@
-import { Strategy, Symbol, SymbolType } from "@/types/strategy";
+import { Strategy, SymbolType } from "@/types/strategy";
 
 export const mockStrategies: Strategy[] = [
   {
@@ -6,12 +6,9 @@ export const mockStrategies: Strategy[] = [
     name: "NIFTY Momentum Strategy",
     description: "Captures intraday momentum in NIFTY futures",
     status: "running",
-    symbol: Symbol.NIFTY,
+    symbol: { name: "NIFTY", _id: "1" },
     symbolType: SymbolType.FUTURE,
-    nextExpiry: new Date("2024-04-25"),
-    rollOverStatus: "enabled",
     rollOverOn: new Date("2024-04-23"),
-    rollOverBeforeDays: 2,
     createdAt: new Date("2024-03-01"),
     updatedAt: new Date("2024-03-01")
   },
@@ -20,12 +17,9 @@ export const mockStrategies: Strategy[] = [
     name: "BANKNIFTY Options Strategy",
     description: "Weekly options selling strategy for BANKNIFTY",
     status: "stopped",
-    symbol: Symbol.BANKNIFTY,
+    symbol: { name: "BANKNIFTY", _id: "2" },
     symbolType: SymbolType.OPTION,
-    nextExpiry: new Date("2024-04-18"),
-    rollOverStatus: "disabled",
     rollOverOn: new Date("2024-04-17"),
-    rollOverBeforeDays: 1,
     createdAt: new Date("2024-03-01"),
     updatedAt: new Date("2024-03-01")
   },
@@ -34,12 +28,9 @@ export const mockStrategies: Strategy[] = [
     name: "FINNIFTY Scalping Strategy",
     description: "High-frequency scalping strategy for FINNIFTY futures",
     status: "running",
-    symbol: Symbol.FINNIFTY,
+    symbol: { name: "FINNIFTY", _id: "2" },
     symbolType: SymbolType.FUTURE,
-    nextExpiry: new Date("2024-04-30"),
-    rollOverStatus: "enabled",
     rollOverOn: new Date("2024-04-28"),
-    rollOverBeforeDays: 2,
     createdAt: new Date("2024-03-05"),
     updatedAt: new Date("2024-03-05")
   },
@@ -48,12 +39,10 @@ export const mockStrategies: Strategy[] = [
     name: "NIFTY Iron Condor",
     description: "Monthly options iron condor strategy for consistent premium collection",
     status: "running",
-    symbol: Symbol.NIFTY,
+    symbol: { name: "NIFTY", _id: "1" },
     symbolType: SymbolType.OPTION,
-    nextExpiry: new Date("2024-04-25"),
-    rollOverStatus: "enabled",
+
     rollOverOn: new Date("2024-04-20"),
-    rollOverBeforeDays: 5,
     createdAt: new Date("2024-03-10"),
     updatedAt: new Date("2024-03-10")
   },
@@ -62,12 +51,10 @@ export const mockStrategies: Strategy[] = [
     name: "BANKNIFTY Trend Following",
     description: "Daily trend following strategy using BANKNIFTY futures",
     status: "stopped",
-    symbol: Symbol.BANKNIFTY,
+    symbol: { name: "BANKNIFTY", _id: "2" },
     symbolType: SymbolType.FUTURE,
-    nextExpiry: new Date("2024-04-18"),
-    rollOverStatus: "disabled",
+
     rollOverOn: new Date("2024-04-16"),
-    rollOverBeforeDays: 2,
     createdAt: new Date("2024-03-15"),
     updatedAt: new Date("2024-03-15")
   },
@@ -76,12 +63,9 @@ export const mockStrategies: Strategy[] = [
     name: "FINNIFTY Options Strangle",
     description: "Weekly options strangle strategy for FINNIFTY",
     status: "running",
-    symbol: Symbol.FINNIFTY,
+    symbol: { name: "FINNIFTY", _id: "2" },
     symbolType: SymbolType.OPTION,
-    nextExpiry: new Date("2024-04-30"),
-    rollOverStatus: "enabled",
     rollOverOn: new Date("2024-04-29"),
-    rollOverBeforeDays: 1,
     createdAt: new Date("2024-03-20"),
     updatedAt: new Date("2024-03-20")
   },
@@ -90,12 +74,9 @@ export const mockStrategies: Strategy[] = [
     name: "NIFTY Mean Reversion",
     description: "Intraday mean reversion strategy for NIFTY",
     status: "stopped",
-    symbol: Symbol.NIFTY,
+    symbol: { name: "NIFTY", _id: "1" },
     symbolType: SymbolType.FUTURE,
-    nextExpiry: new Date("2024-04-25"),
-    rollOverStatus: "enabled",
     rollOverOn: new Date("2024-04-24"),
-    rollOverBeforeDays: 1,
     createdAt: new Date("2024-03-22"),
     updatedAt: new Date("2024-03-22")
   },
@@ -104,12 +85,9 @@ export const mockStrategies: Strategy[] = [
     name: "BANKNIFTY Calendar Spread",
     description: "Options calendar spread strategy for BANKNIFTY",
     status: "running",
-    symbol: Symbol.BANKNIFTY,
+    symbol: { name: "BANKNIFTY", _id: "2" },
     symbolType: SymbolType.OPTION,
-    nextExpiry: new Date("2024-04-18"),
-    rollOverStatus: "enabled",
     rollOverOn: new Date("2024-04-15"),
-    rollOverBeforeDays: 3,
     createdAt: new Date("2024-03-25"),
     updatedAt: new Date("2024-03-25")
   },
@@ -118,12 +96,9 @@ export const mockStrategies: Strategy[] = [
     name: "FINNIFTY Breakout Strategy",
     description: "Breakout trading strategy for FINNIFTY futures",
     status: "running",
-    symbol: Symbol.FINNIFTY,
+    symbol: { name: "FINNIFTY", _id: "2" },
     symbolType: SymbolType.FUTURE,
-    nextExpiry: new Date("2024-04-30"),
-    rollOverStatus: "disabled",
     rollOverOn: new Date("2024-04-27"),
-    rollOverBeforeDays: 3,
     createdAt: new Date("2024-03-27"),
     updatedAt: new Date("2024-03-27")
   },
@@ -132,12 +107,9 @@ export const mockStrategies: Strategy[] = [
     name: "NIFTY Butterfly Strategy",
     description: "Options butterfly spread for NIFTY monthly expiry",
     status: "stopped",
-    symbol: Symbol.NIFTY,
+    symbol: { name: "NIFTY", _id: "1" },
     symbolType: SymbolType.OPTION,
-    nextExpiry: new Date("2024-04-25"),
-    rollOverStatus: "enabled",
     rollOverOn: new Date("2024-04-22"),
-    rollOverBeforeDays: 3,
     createdAt: new Date("2024-03-30"),
     updatedAt: new Date("2024-03-30")
   }

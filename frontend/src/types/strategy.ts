@@ -3,23 +3,13 @@ export enum SymbolType {
   OPTION = "Option"
 }
 
-export enum Symbol {
-  NIFTY = "NIFTY",
-  BANKNIFTY = "BANKNIFTY",
-  FINNIFTY = "FINNIFTY"
-}
-
 export interface Strategy {
   id: string;
   name: string;
   description: string;
   status: "running" | "stopped";
-  symbol: Symbol;
-  symbolType: SymbolType;
-  nextExpiry: Date;
-  rollOverStatus: "enabled" | "disabled";
-  rollOverOn: Date;
-  rollOverBeforeDays: number;
+  symbol: { name: string; _id: string };
+  rollOverOn: Date | undefined;
   createdAt: Date;
   updatedAt: Date;
 }

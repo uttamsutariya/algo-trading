@@ -35,7 +35,8 @@ const handler = NextAuth({
           return {
             id: user.id,
             email: user.email,
-            name: user.name
+            name: user.name,
+            token: user.token
           };
         } catch (error) {
           throw new Error("Authentication failed");

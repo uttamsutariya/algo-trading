@@ -8,7 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Symbol, SymbolType } from "@/types/strategy";
+import { UnderlyingSelect } from "./UnderlyingSelect";
+import { Switch } from "@/components/ui/switch";
+import { useState, useEffect } from "react";
+import { useInstruments } from "@/hooks/useInstruments";
+import { Instrument } from "@/hooks/useInstruments";
+
 import { strategyFormSchema, type StrategyFormValues } from "./strategy-form-schema";
 
 interface StrategyFormProps {
@@ -23,19 +28,79 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel }: StrategyF
     defaultValues: {
       name: "",
       description: "",
-      symbol: Symbol.NIFTY,
-      symbolType: SymbolType.FUTURE,
-      nextExpiry: new Date(),
-      rollOverStatus: "disabled",
+      symbol: { name: "", _id: "" },
       rollOverOn: new Date(),
-      rollOverBeforeDays: 2,
       ...defaultValues
     }
   });
 
+  const { data: instruments } = useInstruments();
+  const [underlyingOptions, setUnderlyingOptions] = useState<string[]>([]);
+  const [exchangeOptions, setExchangeOptions] = useState<string[]>(["NSE"]);
+  const [symbolTypeOptions, setSymbolTypeOptions] = useState<string[]>(["future"]);
+  const [expiryOptions, setExpiryOptions] = useState<Instrument[]>([]);
+  const [selectedUnderlying, setSelectedUnderlying] = useState<string>("");
+  const [selectedExchange, setSelectedExchange] = useState<string>("NSE");
+  const [selectedExpiry, setSelectedExpiry] = useState<Instrument | null>();
+  const [isRollOverOnEnabled, setIsRollOverOnEnabled] = useState<boolean>(true);
+  const [formError, setFormError] = useState<string>("");
+
+  const prioritizedUnderlyings = ["NIFTY", "BANKNIFTY", "FINNIFTY", "GOLDM", "SILVERM"];
+
+  useEffect(() => {
+    if (instruments) {
+      const allUnderlyings = Object.keys(instruments);
+      const sortedUnderlyings = [
+        ...prioritizedUnderlyings,
+        ...allUnderlyings.filter((u) => !prioritizedUnderlyings.includes(u))
+      ];
+      setUnderlyingOptions(sortedUnderlyings);
+    }
+  }, [instruments]);
+
+  useEffect(() => {
+    if (selectedUnderlying && instruments) {
+      const exchanges = Object.keys(instruments[selectedUnderlying]);
+      setExchangeOptions(exchanges);
+      setSelectedExchange(exchanges[0]);
+    }
+  }, [selectedUnderlying, instruments]);
+
+  useEffect(() => {
+    if (selectedUnderlying && selectedExchange && instruments) {
+      const filteredInstruments =
+        instruments[selectedUnderlying][selectedExchange as keyof (typeof instruments)[string]];
+      setExpiryOptions(filteredInstruments || []);
+    }
+  }, [selectedUnderlying, selectedExchange, instruments]);
+
+  useEffect(() => {
+    if (selectedExpiry) {
+      form.setValue("symbol", {
+        name: selectedExpiry.brokerSymbols.fyers,
+        _id: selectedExpiry._id
+      });
+    }
+  }, [selectedExpiry, form]);
+
+  const handleSubmit = (values: StrategyFormValues) => {
+    if (!selectedUnderlying || !selectedExchange || !selectedExpiry) {
+      setFormError("Please select an underlying, exchange, and expiry.");
+      return;
+    }
+    setFormError("");
+
+    const submissionValues = {
+      ...values,
+      rollOverOn: isRollOverOnEnabled ? values.rollOverOn : undefined
+    };
+
+    onSubmit(submissionValues);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -65,158 +130,124 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel }: StrategyF
         />
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="symbol"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Symbol</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select symbol" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Object.values(Symbol).map((symbol) => (
-                      <SelectItem key={symbol} value={symbol}>
-                        {symbol}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <FormItem>
+            <FormLabel>Underlying</FormLabel>
+            <UnderlyingSelect
+              options={underlyingOptions}
+              value={selectedUnderlying}
+              onChange={setSelectedUnderlying}
+              prioritizedOptions={prioritizedUnderlyings}
+            />
+          </FormItem>
 
-          <FormField
-            control={form.control}
-            name="symbolType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Symbol Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Object.values(SymbolType).map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+          <FormItem>
+            <FormLabel>Exchange</FormLabel>
+            <Select onValueChange={setSelectedExchange} defaultValue={selectedExchange}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select exchange" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {exchangeOptions.map((exchange) => (
+                  <SelectItem key={exchange} value={exchange}>
+                    {exchange}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormItem>
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="nextExpiry"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Next Expiry</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={`pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                      >
-                        {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) => date < new Date()}
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <FormItem>
+            <FormLabel>Symbol Type</FormLabel>
+            <Select defaultValue="future" disabled>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {symbolTypeOptions.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormItem>
 
-          <FormField
-            control={form.control}
-            name="rollOverBeforeDays"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Roll Over Before (days)</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <FormItem>
+            <FormLabel>Expiry</FormLabel>
+            <Select
+              onValueChange={(value) => setSelectedExpiry(expiryOptions.find((e) => e._id === value) || null)}
+              defaultValue={selectedExpiry?._id}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select expiry" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {expiryOptions.map((instrument) => (
+                  <SelectItem key={instrument._id} value={instrument._id}>
+                    {format(new Date(instrument.expiry), "PPP")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormItem>
         </div>
 
         <FormField
           control={form.control}
-          name="rollOverStatus"
+          name="symbol"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Roll Over Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="enabled">Enabled</SelectItem>
-                  <SelectItem value="disabled">Disabled</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Symbol</FormLabel>
+              <FormControl>
+                <Input {...field} readOnly value={field.value.name} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="rollOverOn"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Roll Over On</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      className={`pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                    >
-                      {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) => date < new Date()}
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
+        <FormItem>
+          <FormLabel>Roll Over On</FormLabel>
+          <div className="flex items-center space-x-2">
+            <Switch checked={isRollOverOnEnabled} onCheckedChange={setIsRollOverOnEnabled} />
+            <span>{isRollOverOnEnabled ? "Enabled" : "Disabled"}</span>
+          </div>
+          {isRollOverOnEnabled && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={`w-full justify-start text-left font-normal ${
+                    !form.getValues("rollOverOn") && "text-muted-foreground"
+                  }`}
+                >
+                  <CalendarIcon />
+                  {form.getValues("rollOverOn") ? (
+                    format(form.getValues("rollOverOn") || new Date(), "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={form.getValues("rollOverOn")}
+                  onSelect={(date) => form.setValue("rollOverOn", isRollOverOnEnabled ? date : undefined)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           )}
-        />
+        </FormItem>
+
+        {formError && <div className="text-red-500">{formError}</div>}
 
         <Button type="submit" className="w-full">
           {submitLabel}

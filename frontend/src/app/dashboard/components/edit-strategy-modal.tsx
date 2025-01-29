@@ -3,6 +3,7 @@ import { useStrategyStore } from "@/store/useStrategyStore";
 import { Strategy } from "@/types/strategy";
 import { StrategyForm } from "./strategy-form";
 import type { StrategyFormValues } from "./strategy-form-schema";
+import { useInstruments } from "@/hooks/useInstruments";
 
 interface EditStrategyModalProps {
   strategy: Strategy | null;
@@ -12,6 +13,7 @@ interface EditStrategyModalProps {
 
 export function EditStrategyModal({ strategy, open, onOpenChange }: EditStrategyModalProps) {
   const updateStrategy = useStrategyStore((state) => state.updateStrategy);
+  const { data: instruments, isLoading, isError } = useInstruments();
 
   const onSubmit = (values: StrategyFormValues) => {
     if (strategy) {
@@ -28,7 +30,13 @@ export function EditStrategyModal({ strategy, open, onOpenChange }: EditStrategy
         <DialogHeader>
           <DialogTitle>Edit Strategy</DialogTitle>
         </DialogHeader>
-        <StrategyForm defaultValues={strategy} onSubmit={onSubmit} submitLabel="Update Strategy" />
+        {isLoading ? (
+          <div>Loading instruments...</div>
+        ) : isError ? (
+          <div>Error loading instruments</div>
+        ) : (
+          <StrategyForm defaultValues={strategy} onSubmit={onSubmit} submitLabel="Update Strategy" />
+        )}
       </DialogContent>
     </Dialog>
   );
