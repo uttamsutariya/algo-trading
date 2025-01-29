@@ -85,11 +85,6 @@ export const viewAllStrategies = async (req: Request, res: Response) => {
     // Fetch all strategies and populate instrument details
     const strategies = await Strategy.find().populate("symbol");
 
-    // If no strategies exist, return a 404 response
-    if (strategies.length === 0) {
-      return res.status(404).json({ error: "No strategies found." });
-    }
-
     // Respond with the list of strategies
     return res.status(200).json(strategies);
   } catch (err) {

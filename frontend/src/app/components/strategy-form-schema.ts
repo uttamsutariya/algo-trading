@@ -6,9 +6,15 @@ export const strategyFormSchema = z.object({
   description: z.string().min(1, "Description is required"),
   symbol: z.object({
     name: z.string(),
-    _id: z.string()
+    _id: z.string(),
+    brokerSymbols: z.object({
+      fyers: z.string()
+    }),
+    underlying: z.string(),
+    exchange: z.string()
   }),
-  rollOverOn: z.date().optional()
+  rollOverOn: z.date().optional(),
+  broker: z.string().default("fyers")
 });
 
 export type StrategyFormValues = z.infer<typeof strategyFormSchema>;

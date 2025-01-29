@@ -4,12 +4,26 @@ export enum SymbolType {
 }
 
 export interface Strategy {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   status: "running" | "stopped";
-  symbol: { name: string; _id: string };
-  rollOverOn: Date | undefined;
-  createdAt: Date;
-  updatedAt: Date;
+  symbol: {
+    brokerSymbols: {
+      fyers: string;
+    };
+    _id: string;
+    exToken: string;
+    createdAt: string;
+    exSymName: string;
+    exchange: string;
+    expiry: string;
+    instrumentType: string;
+    underlying: string;
+    updatedAt: string;
+  };
+  rollOverOn: Date | null;
+  createdAt: string;
+  updatedAt: string;
+  broker: string;
 }

@@ -119,9 +119,6 @@ export const validateCreateStrategy = async (data: IStrategyInput): Promise<Vali
   }
   validatedData.broker = data.broker;
 
-  // Set default status if not provided
-  validatedData.status = data.status || StrategyStatus.STOPPED;
-
   return { isValid: true, validatedData };
 };
 

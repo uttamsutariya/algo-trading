@@ -3,6 +3,9 @@ import { useStrategyStore } from "@/store/useStrategyStore";
 import { StrategyForm } from "./strategy-form";
 import type { StrategyFormValues } from "./strategy-form-schema";
 import { useInstruments } from "@/hooks/useInstruments";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { strategyApi } from "@/lib/api/strategy";
+import { toast } from "sonner";
 
 interface AddStrategyModalProps {
   open: boolean;
@@ -10,17 +13,28 @@ interface AddStrategyModalProps {
 }
 
 export function AddStrategyModal({ open, onOpenChange }: AddStrategyModalProps) {
-  const addStrategy = useStrategyStore((state) => state.addStrategy);
   const { data: instruments, isLoading, isError } = useInstruments();
 
+  const queryClient = useQueryClient();
+
+  const createStrategy = useMutation({
+    mutationFn: (payload: any) => {
+      return strategyApi.createStrategy(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["strategies"] });
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      console.log("error ::", error);
+      toast.error("Failed to create strategy", {
+        description: error.message
+      });
+    }
+  });
+
   const onSubmit = (values: StrategyFormValues) => {
-    console.log("values", values);
-    addStrategy({
-      ...values,
-      status: "running",
-      rollOverOn: values.rollOverOn || undefined
-    });
-    onOpenChange(false);
+    createStrategy.mutate(values);
   };
 
   return (
@@ -34,7 +48,11 @@ export function AddStrategyModal({ open, onOpenChange }: AddStrategyModalProps) 
         ) : isError ? (
           <div>Error loading instruments</div>
         ) : (
-          <StrategyForm onSubmit={onSubmit} submitLabel="Add Strategy" />
+          <StrategyForm
+            onSubmit={onSubmit}
+            submitLabel={createStrategy.isPending ? "Adding..." : "Add Strategy"}
+            loading={createStrategy.isPending}
+          />
         )}
       </DialogContent>
     </Dialog>

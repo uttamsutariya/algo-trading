@@ -20,17 +20,19 @@ interface StrategyFormProps {
   defaultValues?: Partial<StrategyFormValues>;
   onSubmit: (values: StrategyFormValues) => void;
   submitLabel: string;
+  loading: boolean;
+  isEditMode?: boolean;
 }
 
-export function StrategyForm({ defaultValues, onSubmit, submitLabel }: StrategyFormProps) {
+export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, isEditMode = false }: StrategyFormProps) {
   const form = useForm<StrategyFormValues>({
     resolver: zodResolver(strategyFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      symbol: { name: "", _id: "" },
-      rollOverOn: new Date(),
-      ...defaultValues
+      name: defaultValues?.name || "",
+      description: defaultValues?.description || "",
+      symbol: defaultValues?.symbol || { name: "", _id: "" },
+      rollOverOn: defaultValues?.rollOverOn || new Date(),
+      broker: defaultValues?.broker || "fyers"
     }
   });
 
@@ -78,13 +80,31 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel }: StrategyF
     if (selectedExpiry) {
       form.setValue("symbol", {
         name: selectedExpiry.brokerSymbols.fyers,
-        _id: selectedExpiry._id
+        _id: selectedExpiry._id,
+        brokerSymbols: {
+          fyers: selectedExpiry.brokerSymbols.fyers
+        },
+        underlying: selectedExpiry.underlying,
+        exchange: selectedExpiry.exchange
       });
     }
   }, [selectedExpiry, form]);
 
+  useEffect(() => {
+    if (defaultValues?.symbol) {
+      setSelectedUnderlying(defaultValues.symbol.underlying);
+      setSelectedExchange(defaultValues.symbol.exchange);
+      setSelectedExpiry(expiryOptions.find((e) => e._id === defaultValues?.symbol?._id) || null);
+    }
+    if (defaultValues?.rollOverOn) {
+      setIsRollOverOnEnabled(true);
+    } else {
+      setIsRollOverOnEnabled(false);
+    }
+  }, [defaultValues]);
+
   const handleSubmit = (values: StrategyFormValues) => {
-    if (!selectedUnderlying || !selectedExchange || !selectedExpiry) {
+    if (!isEditMode && (!selectedUnderlying || !selectedExchange || !selectedExpiry)) {
       setFormError("Please select an underlying, exchange, and expiry.");
       return;
     }
@@ -98,6 +118,8 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel }: StrategyF
     onSubmit(submissionValues);
   };
 
+  console.log("form.getValues(rollOverOn) ::", form.getValues("rollOverOn"));
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -108,7 +130,7 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel }: StrategyF
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} disabled={loading} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -122,81 +144,84 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel }: StrategyF
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} disabled={loading} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormItem>
-            <FormLabel>Underlying</FormLabel>
-            <UnderlyingSelect
-              options={underlyingOptions}
-              value={selectedUnderlying}
-              onChange={setSelectedUnderlying}
-              prioritizedOptions={prioritizedUnderlyings}
-            />
-          </FormItem>
+        {!isEditMode && (
+          <div className="grid grid-cols-2 gap-4">
+            <FormItem>
+              <FormLabel>Underlying</FormLabel>
+              <UnderlyingSelect
+                options={underlyingOptions}
+                value={selectedUnderlying}
+                onChange={setSelectedUnderlying}
+                prioritizedOptions={prioritizedUnderlyings}
+              />
+            </FormItem>
 
-          <FormItem>
-            <FormLabel>Exchange</FormLabel>
-            <Select onValueChange={setSelectedExchange} defaultValue={selectedExchange}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select exchange" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {exchangeOptions.map((exchange) => (
-                  <SelectItem key={exchange} value={exchange}>
-                    {exchange}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormItem>
+            <FormItem>
+              <FormLabel>Exchange</FormLabel>
+              <Select onValueChange={setSelectedExchange} defaultValue={selectedExchange} disabled={loading}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select exchange" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {exchangeOptions.map((exchange) => (
+                    <SelectItem key={exchange} value={exchange}>
+                      {exchange}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
 
-          <FormItem>
-            <FormLabel>Symbol Type</FormLabel>
-            <Select defaultValue="future" disabled>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {symbolTypeOptions.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormItem>
+            <FormItem>
+              <FormLabel>Symbol Type</FormLabel>
+              <Select defaultValue="future" disabled>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {symbolTypeOptions.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
 
-          <FormItem>
-            <FormLabel>Expiry</FormLabel>
-            <Select
-              onValueChange={(value) => setSelectedExpiry(expiryOptions.find((e) => e._id === value) || null)}
-              defaultValue={selectedExpiry?._id}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select expiry" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {expiryOptions.map((instrument) => (
-                  <SelectItem key={instrument._id} value={instrument._id}>
-                    {format(new Date(instrument.expiry), "PPP")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormItem>
-        </div>
+            <FormItem>
+              <FormLabel>Expiry</FormLabel>
+              <Select
+                onValueChange={(value) => setSelectedExpiry(expiryOptions.find((e) => e._id === value) || null)}
+                defaultValue={selectedExpiry?._id}
+                disabled={loading}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select expiry" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {expiryOptions.map((instrument) => (
+                    <SelectItem key={instrument._id} value={instrument._id}>
+                      {format(new Date(instrument.expiry), "PPP")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
+          </div>
+        )}
 
         <FormField
           control={form.control}
@@ -205,9 +230,29 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel }: StrategyF
             <FormItem>
               <FormLabel>Symbol</FormLabel>
               <FormControl>
-                <Input {...field} readOnly value={field.value.name} />
+                <Input {...field} readOnly value={field.value.name} disabled={loading} />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="broker"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Broker</FormLabel>
+              <Select defaultValue="fyers" disabled>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select broker" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="fyers">Fyers</SelectItem>
+                </SelectContent>
+              </Select>
             </FormItem>
           )}
         />
@@ -215,7 +260,7 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel }: StrategyF
         <FormItem>
           <FormLabel>Roll Over On</FormLabel>
           <div className="flex items-center space-x-2">
-            <Switch checked={isRollOverOnEnabled} onCheckedChange={setIsRollOverOnEnabled} />
+            <Switch checked={isRollOverOnEnabled} onCheckedChange={setIsRollOverOnEnabled} disabled={loading} />
             <span>{isRollOverOnEnabled ? "Enabled" : "Disabled"}</span>
           </div>
           {isRollOverOnEnabled && (
@@ -224,12 +269,13 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel }: StrategyF
                 <Button
                   variant={"outline"}
                   className={`w-full justify-start text-left font-normal ${
-                    !form.getValues("rollOverOn") && "text-muted-foreground"
+                    !form.watch("rollOverOn") && "text-muted-foreground"
                   }`}
+                  disabled={loading}
                 >
                   <CalendarIcon />
-                  {form.getValues("rollOverOn") ? (
-                    format(form.getValues("rollOverOn") || new Date(), "PPP")
+                  {form.watch("rollOverOn") ? (
+                    format(form.watch("rollOverOn") || new Date(), "PPP")
                   ) : (
                     <span>Pick a date</span>
                   )}
@@ -238,8 +284,13 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel }: StrategyF
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={form.getValues("rollOverOn")}
-                  onSelect={(date) => form.setValue("rollOverOn", isRollOverOnEnabled ? date : undefined)}
+                  selected={form.watch("rollOverOn")}
+                  onSelect={(date: Date | undefined) => {
+                    console.log("date ::", date);
+                    if (isRollOverOnEnabled) {
+                      form.setValue("rollOverOn", date, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+                    }
+                  }}
                   initialFocus
                 />
               </PopoverContent>
@@ -249,7 +300,7 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel }: StrategyF
 
         {formError && <div className="text-red-500">{formError}</div>}
 
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={loading}>
           {submitLabel}
         </Button>
       </form>

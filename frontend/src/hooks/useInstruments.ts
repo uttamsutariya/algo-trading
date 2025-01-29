@@ -32,7 +32,7 @@ export function useInstruments() {
   return useQuery({
     queryKey: ["instruments"],
     queryFn: async () => {
-      const response = await axiosClient.get<InstrumentsResponse>("/api/instruments");
+      const response = await axiosClient.get<InstrumentsResponse>("/instruments");
       return response.data;
     }
   });

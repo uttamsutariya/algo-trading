@@ -36,13 +36,13 @@ export const useStrategyStore = create<StrategyState>((set: any) => ({
   updateStrategy: (id: string, updatedStrategy: Partial<Strategy>) =>
     set((state: StrategyState) => ({
       strategies: state.strategies.map((strategy: Strategy) =>
-        strategy.id === id ? { ...strategy, ...updatedStrategy, updatedAt: new Date() } : strategy
+        strategy._id === id ? { ...strategy, ...updatedStrategy, updatedAt: new Date() } : strategy
       )
     })),
 
   deleteStrategy: (id: string) =>
     set((state: StrategyState) => ({
-      strategies: state.strategies.filter((strategy: Strategy) => strategy.id !== id)
+      strategies: state.strategies.filter((strategy: Strategy) => strategy._id !== id)
     })),
 
   setSearchQuery: (query: string) => set({ searchQuery: query }),
