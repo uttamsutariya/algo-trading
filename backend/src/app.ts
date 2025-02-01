@@ -12,7 +12,7 @@ import authRoutes from "./rest/routes/auth";
 import { authenticateToken } from "./rest/middleware";
 
 import "./cron/instrumentsUpdate"; // Import the cron job to update symbols daily
-
+import "./cron/expiredSymbolCleanup"; // import the cron job to delete expire symbol daily from instrument table
 const app: Express = express();
 const port = process.env.PORT || 3200;
 

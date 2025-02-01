@@ -1,12 +1,19 @@
 import { BaseBroker } from "./BaseBroker";
 import { OrderRequest, OrderResponse, BrokerConfig } from "../types/broker.types";
 import axios from "axios";
+const FyersAPI = require("fyers-api-v3").fyersModel; // Ensure this is placed correctly at the top
 
 interface FyersOrderResponse {
-  s: string;
-  code: number;
-  message: string;
-  id?: string;
+  s: string; // Status: "ok" for success, "error" for failure
+  code: number; // Error code (if any)
+  message: string; // Response message
+  id?: string; // Optional: A unique identifier for the request
+  orderBook?: Array<{
+    symbol: string; // The symbol of the order (e.g., "NSE:IDEA-EQ")
+    status: number; // Status of the order (e.g., 2 for open, other values for different statuses)
+    orderId: string; // Unique identifier for the order
+    qty: number; // Quantity of the order
+  }>; // Contains an array of order objects
 }
 
 export class FyersBroker extends BaseBroker {
@@ -34,6 +41,30 @@ export class FyersBroker extends BaseBroker {
       throw new Error("Missing Fyers credentials");
     }
   }
+
+  // Fetch orders from Fyers API
+
+  // Fetch orders from Fyers API
+  public async getOrderBook(): Promise<FyersOrderResponse> {
+    const fyers = new FyersAPI();
+    fyers.setAppId(this.config.appId);
+    fyers.setRedirectUrl(this.config.redirectUrl);
+    fyers.setAccessToken(this.config.accessToken);
+
+    try {
+      const response = await fyers.get_orders(); // Call the Fyers API to fetch orders
+      if (response && response.s === "ok") {
+        return response; // If successful, return the orders data
+      } else {
+        console.error("Error fetching orders:", response.message);
+        return { s: "error", code: 400, message: response.message, orderBook: [] }; // Return empty if error
+      }
+    } catch (error) {
+      console.error("Error fetching orders from Fyers:", error);
+      throw new Error("Failed to fetch orders from Fyers API");
+    }
+  }
+  // Method to place an order
 
   public async placeOrder(request: OrderRequest): Promise<OrderResponse> {
     try {
