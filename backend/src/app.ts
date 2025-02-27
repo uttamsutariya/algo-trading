@@ -10,9 +10,9 @@ import strategyRoutes from "./rest/routes/strategy.routes";
 import instrumentsRoutes from "./rest/routes/instruments.routes";
 import authRoutes from "./rest/routes/auth";
 import { authenticateToken } from "./rest/middleware";
+import fyresAuthRoutes from "./rest/routes/fyresAuth"; // Update import based on new file name
 
 import "./cron/instrumentsUpdate"; // Import the cron job to update symbols daily
-import "./cron/expiredSymbolCleanup"; // import the cron job to delete expire symbol daily from instrument table
 const app: Express = express();
 const port = process.env.PORT || 3200;
 
@@ -23,9 +23,10 @@ app.get("/", (req: Request, res: Response) => {
   res.status(200).json({ status: "ok" });
 });
 
+app.use("/api/fyresAuth", fyresAuthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/strategies", strategyRoutes); // make it protected later
-app.use("/api/instruments", instrumentsRoutes); // make it protected later
+app.use("/api", instrumentsRoutes); // make it protected later
 app.use("/api/webhook", webhookController); // webhook processor
 
 // Initialize server
