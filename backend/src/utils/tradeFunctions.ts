@@ -1,79 +1,84 @@
+import { mongo } from "mongoose";
 import { FyersBroker } from "../brokersApi/FyersBroker";
 import Instrument from "../models/instruments.model";
+import Strategy from "../models/strategy.model";
+import mongoose from "mongoose";
 
 /**
- * Fetch all open positions for a specific symbol from Fyers
- */
-export async function fetchOpenPositions(broker: FyersBroker, symbol: string): Promise<any[]> {
-  const positionsResponse = await broker.getOrderBook();
-
-  // If response indicates failure, throw an error
-  if (!positionsResponse || positionsResponse.s !== "ok") {
-    throw new Error("Failed to fetch open positions from broker");
-  }
-
-  // The orderBook is an array of orders, so we filter out orders with status 'OPEN' for the provided symbol
-  return positionsResponse.orderBook?.filter((order: any) => order.symbol === symbol && order.status === 2) || [];
-}
-
 /**
- * Get the next contract based on the current contract's expiry month for a particular symbol
+ * Fetch open positions for a given strategy's symbol
  */
-export async function getNextContract(symbol: string): Promise<any> {
-  const expiredSymbol = await Instrument.findOne({ exSymName: symbol });
-  if (!expiredSymbol) {
-    throw new Error("Expired symbol not found");
+export async function getOpenOrders(broker: FyersBroker, strategyId: string) {
+  try {
+    // 1. Find the strategy
+    const strategy = await Strategy.findById(strategyId);
+    if (!strategy) {
+      console.log(`Strategy with ID ${strategyId} not found.`);
+      return [];
+    }
+
+    // 2. Find the instrument (symbol object) from strategy
+    const symbolObject = await Instrument.findById(strategy.symbol);
+    if (!symbolObject) {
+      console.log(`Symbol Object ID ${strategy.symbol} not found in Instrument table.`);
+      return [];
+    }
+
+    // ✅ Ensure brokerSymbols and fyres exist
+    if (!symbolObject.brokerSymbols || !symbolObject.brokerSymbols.fyers) {
+      return [];
+    }
+
+    const fyresSymbol = symbolObject.brokerSymbols.fyers;
+
+    // 3. Fetch all open orders from the external order book API
+    const response = await broker.getOrderBook(); // Replace with actual API
+    if (response.s !== "ok") {
+      console.error("Error fetching order book:", response.message);
+      return [];
+    }
+
+    const openPositions = response.orderBook; // Extract order book from API response
+
+    // 4. Filter open positions based on brokerSymbols.fyres match
+    const filteredPositions = openPositions?.filter((position: any) => {
+      if (!position.symbol) return false;
+
+      // Compare `orderBook[].symbol` with `brokerSymbols.fyres`
+      return position.symbol === fyresSymbol;
+    });
+
+    console.log(`Filtered ${filteredPositions.length} positions matching brokerSymbols.fyres: ${fyresSymbol}`);
+
+    return filteredPositions;
+  } catch (error) {
+    console.error("Error in getOpenOrders:", error);
+    return [];
   }
-
-  // Extract fixed part of the symbol and expiry month
-  const match = expiredSymbol.exSymName.match(/^([A-Z0-9]+)([A-Z]{3})FUT$/);
-  if (!match) {
-    throw new Error("Invalid symbol format");
-  }
-
-  const baseSymbol = match[1]; // Fixed part (e.g., "91DTB25")
-  const currentMonth = match[2]; // Current expiry month (e.g., "JAN")
-
-  // Mapping of months for contract rollover
-  const monthMap: { [key: string]: string } = {
-    JAN: "FEB",
-    FEB: "MAR",
-    MAR: "APR",
-    APR: "MAY",
-    MAY: "JUN",
-    JUN: "JUL",
-    JUL: "AUG",
-    AUG: "SEP",
-    SEP: "OCT",
-    OCT: "NOV",
-    NOV: "DEC",
-    DEC: "JAN"
-  };
-
-  if (!(currentMonth in monthMap)) {
-    throw new Error("Invalid month in symbol");
-  }
-
-  const nextMonth = monthMap[currentMonth];
-
-  // Find the next contract in the instrument table
-  const nextContract = await Instrument.findOne({
-    exSymName: `${baseSymbol}${nextMonth}FUT`
-  });
-
-  if (!nextContract) {
-    throw new Error("Next contract not found in Instrument table");
-  }
-
-  return nextContract;
 }
 
 /**
  * Close all open positions before rollover for a specific symbol
  */
-export async function closeAllPositions(broker: FyersBroker, openPositions: any[], symbol: string): Promise<void> {
-  const positionsToClose = openPositions.filter((position) => position.symbol === symbol);
+export async function closeAllPositions(broker: FyersBroker, openPositions: any[], strategyId: string): Promise<void> {
+  // 1. Fetch the correct symbol from the Instrument table using strategyId
+  const strategy = await Strategy.findById(strategyId);
+  if (!strategy) {
+    console.error(`Strategy with ID ${strategyId} not found.`);
+    return;
+  }
 
+  const symbolObject = await Instrument.findById(strategy.symbol);
+
+  if (!symbolObject || !symbolObject.brokerSymbols || !symbolObject.brokerSymbols.fyers) {
+    console.error(`Broker symbol (fyres) not found for strategy ID: ${strategyId}`);
+    return;
+  }
+
+  const fyresSymbol = symbolObject.brokerSymbols.fyers;
+
+  // 2. Filter positions based on brokerSymbols.fyres instead of direct symbol
+  const positionsToClose = openPositions.filter((position) => position.symbol === fyresSymbol);
   for (const position of positionsToClose) {
     const closeSide = position.side === "BUY" ? "sell" : "buy"; // Reverse order type
     const closeResponse = await broker.placeOrder({
@@ -93,12 +98,54 @@ export async function closeAllPositions(broker: FyersBroker, openPositions: any[
 }
 
 /**
+ * Get the next contract based on the current contract's expiry month for a particular symbol
+ */
+export async function findNextContract(
+  currentSymbol: mongoose.Types.ObjectId
+): Promise<mongoose.Types.ObjectId | null> {
+  const currentInstrument = await Instrument.findOne({ _id: currentSymbol });
+
+  if (!currentInstrument) return null;
+
+  // Find all contracts for the same underlying and exchange
+  const availableContracts = await Instrument.find({
+    underlying: currentInstrument.underlying,
+    exchange: currentInstrument.exchange
+  }).sort({ expiry: 1 });
+
+  // Get the next expiry after the current one
+  for (let i = 0; i < availableContracts.length - 1; i++) {
+    if (availableContracts[i]._id.equals(currentSymbol)) {
+      return availableContracts[i + 1]._id; // Return next expiry
+    }
+  }
+  return null;
+}
+/**
  * Open new positions with the new contract after rollover for a specific symbol
  */
-export async function openNewPositions(broker: FyersBroker, previousPositions: any[], newSymbol: any): Promise<void> {
+export async function openNewPositions(
+  broker: FyersBroker,
+  previousPositions: any[],
+  nextSymbolId: mongoose.Types.ObjectId | null
+): Promise<void> {
+  // ✅ Prevent execution if `nextSymbolId` is null
+  if (!nextSymbolId) {
+    console.error(` Cannot open new positions: No next contract available.`);
+    return;
+  }
+
+  // 1. Fetch new contract details from Instrument table
+  const newSymbol = await Instrument.findById(nextSymbolId);
+  if (!newSymbol || !newSymbol.brokerSymbols || !newSymbol.brokerSymbols.fyers) {
+    return;
+  }
+
+  const fyresSymbol = newSymbol.brokerSymbols.fyers;
+
   for (const position of previousPositions) {
     const openResponse = await broker.placeOrder({
-      symbol: newSymbol.brokerSymbols.fyers,
+      symbol: fyresSymbol,
       qty: position.qty,
       side: position.side,
       productType: "MARGIN",

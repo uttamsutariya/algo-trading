@@ -3,7 +3,7 @@ import { viewAllInstruments, getFyersBrokers } from "../controllers/instruments.
 
 const router = Router();
 
-router.get("/Instruments", viewAllInstruments);
-router.get("/Brokers", getFyersBrokers);
+router.get("/instruments", viewAllInstruments);
+router.get("/brokers", getFyersBrokers);
 
 export default router;

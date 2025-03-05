@@ -8,7 +8,7 @@ interface FyersOrderResponse {
   code: number; // Error code (if any)
   message: string; // Response message
   id?: string; // Optional: A unique identifier for the request
-  orderBook?: Array<{
+  orderBook: Array<{
     symbol: string; // The symbol of the order (e.g., "NSE:IDEA-EQ")
     status: number; // Status of the order (e.g., 2 for open, other values for different statuses)
     orderId: string; // Unique identifier for the order

@@ -3,6 +3,7 @@ import { StrategyStatus, BrokersAvailable } from "../../types/enums";
 import { validateCreateStrategy, validateUpdateStrategy } from "../../validators/strategy.validation";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
+import { scheduleRolloverJob } from "../../schedule/rolloverScheduler";
 
 // Interface for Request Body
 export interface IStrategyInput {
@@ -28,6 +29,11 @@ export const createStrategy = async (req: Request, res: Response) => {
     // Create and save the strategy
     const newStrategy = new Strategy(validatedData);
     const savedStrategy = await newStrategy.save();
+
+    // Schedule the rollover job asynchronously (non-blocking)
+    if (savedStrategy.rollOverOn) {
+      scheduleRolloverJob(savedStrategy); // Runs in the background
+    }
 
     // Populate the instrument details before sending response
     const populatedStrategy = await savedStrategy.populate("symbol");
