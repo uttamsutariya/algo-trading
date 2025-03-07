@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { viewAllInstruments, getFyersBrokers } from "../controllers/instruments.controller";
+import { viewAllInstruments, viewAllFyersBrokers } from "../controllers/instruments.controller";
 
 const router = Router();
 
 router.get("/instruments", viewAllInstruments);
-router.get("/brokers", getFyersBrokers);
+router.get("/brokers", viewAllFyersBrokers);
 
 export default router;

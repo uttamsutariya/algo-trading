@@ -28,14 +28,17 @@ export const createStrategy = async (req: Request, res: Response) => {
     // Create and save the strategy
     const newStrategy = new Strategy(validatedData);
     const savedStrategy = await newStrategy.save();
+    console.log(savedStrategy, "save strategy");
 
-    // ✅ Schedule the rollover job using BullMQ
+    // Schedule the rollover job using BullMQ
     if (savedStrategy.rollOverOn) {
+      console.log("schedule rollover job");
       await rolloverQueue.add(
         "execute-rollover",
         { strategy: savedStrategy.toObject() },
         { delay: new Date(savedStrategy.rollOverOn).getTime() - Date.now() } // Delay job until rollOverOn date
       );
+      console.log("Test job added to queue");
     }
     // Populate the instrument details before sending response
     const populatedStrategy = await savedStrategy.populate("symbol");

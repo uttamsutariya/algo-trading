@@ -31,7 +31,7 @@ export const viewAllInstruments = async (req: Request, res: Response) => {
 
 //view all brokers
 
-export const getFyersBrokers = async (req: Request, res: Response) => {
+export const viewAllFyersBrokers = async (req: Request, res: Response) => {
   try {
     // Fetch only Fyers brokers
     const brokers: IBroker[] = await BrokerModel.find({ broker_name: "fyers" });

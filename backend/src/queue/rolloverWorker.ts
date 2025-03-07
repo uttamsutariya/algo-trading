@@ -1,47 +1,103 @@
 import { Worker } from "bullmq";
-import { getOpenOrders, closeAllPositions, findNextContract, openNewPositions } from "../utils/tradeFunctions";
 import redisConfig from "../config/redis.config";
+import {
+  getOpenOrders,
+  closeAllPositions,
+  findNextContract,
+  openNewPositions,
+  updateStrategySymbol
+} from "../utils/tradeFunctions";
 import { FyersBroker } from "../brokersApi/FyersBroker";
 import brokerConfig from "../config/broker.config";
 
 // Create a FyersBroker instance using credentials
 const broker = FyersBroker.getInstance(brokerConfig.fyers);
 
-// ✅ Create a worker to process rollover jobs
-const rolloverWorker = new Worker(
-  "rolloverQueue",
-  async (job) => {
-    console.log(job, "job...");
-    const strategy = job.data.strategy;
+export class RolloverTaskWorker {
+  private worker: Worker;
 
-    if (!strategy) {
-      console.error("❌ No strategy data found in job.");
-      return;
-    }
+  constructor() {
+    // Initialize the worker
+    this.worker = new Worker(
+      "rolloverQueue",
+      async (job) => {
+        try {
+          console.log("Job received:", job.data);
+          const strategy = job.data.strategy;
 
-    console.log(`🚀 Executing rollover job for strategy: ${strategy.name}`);
+          if (!strategy) {
+            console.error("No strategy data found in job.");
+            return;
+          }
 
-    // ✅ Fetch open positions
-    const openPositions = await getOpenOrders(broker, strategy._id);
-    if (!openPositions.length) {
-      console.log(`⚠️ No open positions found for strategy ${strategy.name}`);
-      return;
-    }
+          console.log(`Executing rollover job for strategy: ${strategy.name}`);
 
-    // ✅ Close positions
-    await closeAllPositions(broker, openPositions, strategy._id);
+          // // Fetch open positions
+          const openPositions = await getOpenOrders(broker, strategy._id);
+          if (!openPositions.length) {
+            console.log(`No open positions found for strategy ${strategy.name}`);
+            return;
+          }
 
-    // ✅ Find the next contract
-    const nextSymbol = await findNextContract(strategy.symbol);
-    if (!nextSymbol) {
-      console.log(`⚠️ No next contract found for strategy ${strategy.name}`);
-      return;
-    }
+          // // Close positions
+          await closeAllPositions(broker, openPositions, strategy._id);
 
-    // ✅ Reopen positions with the new contract
-    await openNewPositions(broker, openPositions, nextSymbol);
+          // Find the next contract
+          const nextSymbol = await findNextContract(strategy.symbol);
+          if (!nextSymbol) {
+            console.log(`No next contract found for strategy ${strategy.name}`);
+            return;
+          } else {
+            console.log(`Next contract found for strategy ${strategy.name}`, nextSymbol);
 
-    console.log(`✅ Rollover completed successfully for strategy: ${strategy.name}`);
-  },
-  { connection: redisConfig.redis }
-);
+            // Update the strategy with the new symbol ID
+            try {
+              const updatedStrategy = await updateStrategySymbol(strategy._id, nextSymbol);
+              console.log(`Strategy ${strategy.name} updated with new symbol ID: ${updatedStrategy.symbol}`);
+            } catch (error) {
+              console.error("Failed to update strategy with new symbol ID:", error);
+            }
+          }
+
+          // // Reopen positions with the new contract
+          await openNewPositions(broker, openPositions, nextSymbol);
+
+          console.log(`Rollover completed successfully for strategy: ${strategy.name}`);
+        } catch (error) {
+          console.error("Error executing rollover job:", error);
+        }
+      },
+      { connection: redisConfig.redis }
+    );
+
+    // Handle worker events
+    this.worker.on("completed", (job) => {
+      console.log(`Job ${job.id} completed successfully.`);
+    });
+
+    this.worker.on("failed", (job, err) => {
+      console.error(`Job ${job?.id} failed:`, err);
+    });
+
+    this.worker.on("error", (err) => {
+      console.error("Worker error:", err);
+    });
+
+    console.log("Rollover worker instance created");
+  }
+
+  // Start worker (returning a Promise)
+  public start(): Promise<void> {
+    return new Promise((resolve) => {
+      console.log("Rollover worker started and listening for jobs...");
+      resolve();
+    });
+  }
+
+  // Stop worker gracefully
+  public async stop() {
+    console.log("Stopping rollover worker...");
+    await this.worker.close();
+    console.log("Rollover worker stopped.");
+  }
+}

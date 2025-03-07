@@ -129,7 +129,7 @@ export async function openNewPositions(
   previousPositions: any[],
   nextSymbolId: mongoose.Types.ObjectId | null
 ): Promise<void> {
-  // ✅ Prevent execution if `nextSymbolId` is null
+  // Prevent execution if `nextSymbolId` is null
   if (!nextSymbolId) {
     console.error(` Cannot open new positions: No next contract available.`);
     return;
@@ -159,3 +159,20 @@ export async function openNewPositions(
     }
   }
 }
+
+/**
+ * Update strategy with the new symbol ID
+ */
+export const updateStrategySymbol = async (id: string, newSymbolId: mongoose.Types.ObjectId) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error("Invalid strategy ID.");
+  }
+
+  const updatedStrategy = await Strategy.findByIdAndUpdate(id, { symbol: newSymbolId }, { new: true });
+
+  if (!updatedStrategy) {
+    throw new Error("Strategy not found.");
+  }
+
+  return updatedStrategy;
+};

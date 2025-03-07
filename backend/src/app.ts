@@ -4,6 +4,7 @@ dotenv.config();
 import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import { webhookController } from "./rest/controllers/webhook.controller";
+import { TradeTaskWorker } from "./queue/TradeTaskWorker";
 import strategyRoutes from "./rest/routes/strategy.routes";
 import instrumentsRoutes from "./rest/routes/instruments.routes";
 import authRoutes from "./rest/routes/auth";
@@ -17,7 +18,9 @@ const app: Express = express();
 app.use(
   cors({
     origin: ["http://localhost:3000", "http://localhost:3200"],
-    credentials: true
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "Content-Length", "X-Requested-With"]
   })
 );
 app.use(express.json());

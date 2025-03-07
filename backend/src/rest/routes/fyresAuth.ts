@@ -20,6 +20,8 @@ router.get("/login", (req: Request, res: Response) => {
 
 // Step 2: Handle the callback after login
 router.get("/callback", async (req: Request, res: Response) => {
+  console.log("Callback route hit!");
+  console.log("Query params:", req.query);
   const { auth_code } = req.query;
 
   if (!auth_code) {

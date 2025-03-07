@@ -1,6 +1,7 @@
 import app from "./app";
 import { connectDatabase } from "./config/database";
 import { TradeTaskWorker } from "./queue/TradeTaskWorker";
+import { RolloverTaskWorker } from "./queue/rolloverWorker";
 
 const port = process.env.PORT || 3200;
 
@@ -19,6 +20,17 @@ const startServer = async () => {
       })
       .catch((error) => {
         console.error("Failed to start trade worker:", error);
+        process.exit(1);
+      });
+    // Initialize rollover task worker
+    const rolloverWorker = new RolloverTaskWorker();
+    await rolloverWorker
+      .start()
+      .then(() => {
+        console.log("RolloverTaskWorker started");
+      })
+      .catch((error) => {
+        console.error("Failed to start rollover worker:", error);
         process.exit(1);
       });
 
