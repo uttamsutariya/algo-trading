@@ -6,6 +6,7 @@ import {
   viewStrategy,
   deleteStrategy
 } from "../controllers/strategy.controller";
+import { rollover } from "../controllers/rollover.controller";
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.put("/update/:id", updateStrategy);
 router.get("/view", viewAllStrategies);
 router.get("/view/:id", viewStrategy);
 router.delete("/delete/:id", deleteStrategy);
+router.post("/rollover/:strategyId", rollover);
 
 export default router;

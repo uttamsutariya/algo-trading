@@ -7,14 +7,14 @@ require("dotenv").config();
 
 // Load environment variables
 const client_id = process.env.FYERS_CLIENT_ID;
-const redirect_uri = process.env.FYERS_REDIRECT_URI;
+const redirect_url = process.env.FYERS_REDIRECT_URL;
 const applIdHash = process.env.FYERS_APPL_ID_HASH;
 
 const router = Router();
 
 // Step 1: Redirect to Fyers login page
 router.get("/login", (req: Request, res: Response) => {
-  const authUrl = `https://api.fyers.in/api/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}`;
+  const authUrl = `https://api.fyers.in/api/v2/auth?client_id=${client_id}&redirect_uri=${redirect_url}`;
   res.redirect(authUrl); // Redirect the user to the Fyers login page
 });
 
@@ -50,7 +50,7 @@ router.get("/callback", async (req: Request, res: Response) => {
     // Step 4: Fetch Fyers Profile
     const fyers = new FyersAPI();
     fyers.setAppId(client_id);
-    fyers.setRedirectUrl(redirect_uri);
+    fyers.setRedirectUrl(redirect_url);
     fyers.setAccessToken(access_token);
 
     const profileResponse = await fyers.get_profile();
