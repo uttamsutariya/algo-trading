@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Instrument from "../../models/instruments.model";
 import BrokerModel, { IBroker } from "../../models/broker.model";
+import { triggerManualUpdate } from "../../cron/instrumentsUpdate";
 
 //view all instruments
 
@@ -47,5 +48,17 @@ export const viewAllFyersBrokers = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error fetching brokers:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Add new controller to manually trigger instruments update
+export const updateInstruments = async (req: Request, res: Response) => {
+  try {
+    console.log("Manual instruments update triggered");
+    await triggerManualUpdate();
+    return res.status(200).json({ message: "Instruments update triggered successfully" });
+  } catch (error) {
+    console.error("Error triggering instruments update:", error);
+    return res.status(500).json({ message: "Failed to trigger instruments update", error: String(error) });
   }
 };

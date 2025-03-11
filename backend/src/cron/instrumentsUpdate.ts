@@ -116,6 +116,9 @@ async function main() {
   }
 }
 
+// Export the main function to be called from API routes
+export const triggerManualUpdate = main;
+
 // Run daily at 8:00 AM IST (2:30 AM UTC)
 cron.schedule("30 2 * * *", async () => {
   try {
