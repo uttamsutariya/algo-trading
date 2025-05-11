@@ -2,11 +2,11 @@ import mongoose, { Schema, Document } from "mongoose";
 
 // Credential type definitions for each broker
 export interface FyersCredentials {
-  fy_id: string;
   access_token: string;
   refresh_token: string;
   client_id: string;
-  app_hash_id: string;
+  secret_key: string;
+  fy_id: string;
 }
 
 interface AngelOneCredentials {
@@ -55,7 +55,7 @@ const BrokerSchema = new Schema(
 
           // Validation rules for each broker type
           const validationRules = {
-            fyers: ["fy_id", "access_token", "refresh_token", "client_id", "app_hash_id"],
+            fyers: ["fy_id", "access_token", "refresh_token", "client_id", "secret_key"],
             angelone: ["api_key", "api_token", "app_id"],
             zerodha: ["api_key", "api_secret", "access_token", "user_id"]
           };
@@ -117,7 +117,7 @@ BrokerSchema.pre("save", function (next) {
 // Type guard functions
 function isFyersCredentials(cred: any): cred is FyersCredentials {
   return (
-    "fy_id" in cred && "access_token" in cred && "refresh_token" in cred && "client_id" in cred && "app_hash_id" in cred
+    "fy_id" in cred && "access_token" in cred && "refresh_token" in cred && "client_id" in cred && "secret_key" in cred
   );
 }
 

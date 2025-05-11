@@ -4,6 +4,8 @@ import Strategy from "../models/strategy.model";
 import { FyersBroker } from "../brokersApi/FyersBroker";
 import config from "../config/broker.config";
 import Instrument from "../models/instruments.model";
+import BrokerModel from "../models/broker.model";
+import { FyersCredentials } from "../models/broker.model";
 
 export class TradeTaskWorker {
   private queueClient: QueueClient;
@@ -55,21 +57,33 @@ export class TradeTaskWorker {
         throw new Error(`Strategy not found: ${task.data.strategyId}`);
       }
 
-      // Step 9: Fetch the updated symbol after rollover and place order
+      // Step 2: Fetch the updated symbol after rollover
       const symbol = await Instrument.findById(strategy.symbol);
       if (!symbol) {
         throw new Error(`Symbol not found: ${strategy.symbol}`);
       }
 
-      // Step 10: Initialize broker for placing the order
+      // Step 3: Fetch active Fyers broker for this user
+
+      const brokerRecord = await BrokerModel.findOne({
+        // "credentials.fy_id": task.data.fy_id,
+        broker_name: "fyers",
+        is_active: true
+      });
+      if (!brokerRecord) {
+        throw new Error("No active Fyers broker found for this user. Please reauthenticate.");
+      }
+
+      const { client_id, access_token } = brokerRecord.credentials as FyersCredentials;
+      // Step 4: Initialize broker for placing the order
       const broker = FyersBroker.getInstance({
-        appId: config.fyers.appId,
-        accessToken: config.fyers.accessToken,
+        appId: client_id,
+        accessToken: access_token,
         redirectUrl: config.fyers.redirectUrl
       });
       await broker.initialize();
 
-      // Step 12: Place order using the broker's API
+      // Step 4: Place order using the broker's API
       const orderResponse = await broker.placeOrder({
         symbol: symbol?.brokerSymbols?.fyers!,
         qty: task.data.qty,
@@ -82,11 +96,11 @@ export class TradeTaskWorker {
         throw new Error(orderResponse.error || "Order placement failed");
       }
 
-      // Step 13: Mark the task as complete
+      // Step 5: Mark the task as complete
       await this.queueClient.completeTask(task.id);
       console.log(`Order placed successfully: ${orderResponse.orderId}`);
     } catch (error) {
-      // Step 14: Handle errors and mark the task as failed
+      // Step 6: Handle errors and mark the task as failed
       if (error instanceof Error) {
         await this.queueClient.completeTask(task.id, error.message);
       } else {

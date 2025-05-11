@@ -14,7 +14,7 @@ const refreshAccessToken = async () => {
     for (const broker of brokers) {
       if (broker.broker_name !== "fyers") continue; // Only process Fyers for now
 
-      // ✅ Type Assertion: Tell TypeScript that these credentials are FyersCredentials
+      // Type Assertion: Tell TypeScript that these credentials are FyersCredentials
       const fyersCredentials = broker.credentials as FyersCredentials;
       const { refresh_token, fy_id } = fyersCredentials;
       const tokenIssuedAt = new Date(broker.token_issued_at);
@@ -33,7 +33,7 @@ const refreshAccessToken = async () => {
       }
 
       try {
-        // ✅ Call Fyers API to refresh token ONLY IF within 15 days
+        //Call Fyers API to refresh token ONLY IF within 15 days
         const tokenResponse = await axios.post(
           "https://api.fyers.in/api/v2/token",
           { grant_type: "refresh_token", refresh_token },
@@ -47,7 +47,7 @@ const refreshAccessToken = async () => {
 
         const { access_token } = tokenResponse.data;
 
-        // ✅ Update access token and reset token issued timestamp in DB
+        //Update access token and reset token issued timestamp in DB
         fyersCredentials.access_token = access_token;
         broker.token_issued_at = new Date(); // Set new issue time
         await broker.save();

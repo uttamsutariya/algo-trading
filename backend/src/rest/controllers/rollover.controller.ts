@@ -17,10 +17,10 @@ export const rollover = async (req: Request, res: Response) => {
     }
 
     // Find the next contract
-    const nextSymbol = await findNextContract(strategy.symbol);
+    const { nextSymbol, message } = await findNextContract(strategy.symbol);
     if (!nextSymbol) {
       console.log(`No next contract found for strategy ${strategy.name}`);
-      return res.status(404).json({ message: "Next contract not found" });
+      return res.status(404).json({ message });
     }
 
     console.log(`Next contract found for strategy ${strategy.name}`, nextSymbol);

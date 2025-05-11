@@ -52,17 +52,27 @@ export class RolloverTaskWorker {
 
             // Update the strategy with the new symbol ID
             try {
-              const updatedStrategy = await updateStrategySymbol(strategy._id, nextSymbol);
-              console.log(`Strategy ${strategy.name} updated with new symbol ID: ${updatedStrategy.symbol}`);
+              const nextSymbolId = nextSymbol.nextSymbol;
+              if (nextSymbolId) {
+                const updatedStrategy = await updateStrategySymbol(strategy._id, nextSymbolId);
+                console.log(`Strategy ${strategy.name} updated with new symbol ID: ${updatedStrategy.symbol}`);
+              } else {
+                console.log(`No valid next contract found for strategy ${strategy.name}`);
+              }
             } catch (error) {
               console.error("Failed to update strategy with new symbol ID:", error);
             }
           }
 
           // // Reopen positions with the new contract
-          await openNewPositions(broker, openPositions, nextSymbol);
+          const nextSymbolId = nextSymbol.nextSymbol;
 
-          console.log(`Rollover completed successfully for strategy: ${strategy.name}`);
+          if (nextSymbolId) {
+            await openNewPositions(broker, openPositions, nextSymbolId);
+            console.log(`Rollover completed successfully for strategy: ${strategy.name}`);
+          } else {
+            console.log(`No valid next contract found. Skipping position re-opening for strategy: ${strategy.name}`);
+          }
         } catch (error) {
           console.error("Error executing rollover job:", error);
         }

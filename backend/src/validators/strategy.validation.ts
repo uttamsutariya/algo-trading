@@ -129,6 +129,16 @@ export const validateUpdateStrategy = async (
 ): Promise<ValidationResult> => {
   const validatedData: Partial<IStrategyInput> = {};
 
+  // Check if strategy exists before validation
+  const existingStrategy = await Strategy.findById(id);
+  if (!existingStrategy) {
+    return {
+      isValid: false,
+      error: "Strategy not found. Please provide a valid strategy ID.",
+      validatedData
+    };
+  }
+
   // Validate optional fields if provided
   if (data.name !== undefined) {
     if (typeof data.name !== "string" || !data.name.trim()) {

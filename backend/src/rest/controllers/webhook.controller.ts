@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Strategy from "../../models/strategy.model";
 import { QueueClient } from "../../queue/QueueClient";
 import { TradeTask } from "../../types/queue.types";
+import BrokerModel from "../../models/broker.model";
 
 interface WebhookRequest {
   strategyId: string;
@@ -80,7 +81,6 @@ export const webhookController = async (req: Request, res: Response) => {
     }
 
     const { strategyId, qty, side } = validation.validatedData;
-
     // Create trade task
     const tradeTask: TradeTask = {
       strategyId,

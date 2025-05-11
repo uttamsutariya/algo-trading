@@ -143,13 +143,14 @@ export const deleteStrategy = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid strategy ID." });
     }
 
+    // Check if the strategy exists before deletion
+    const existingStrategy = await Strategy.findById(id);
+    if (!existingStrategy) {
+      return res.status(404).json({ error: "Strategy not found. Please provide a valid strategy ID." });
+    }
+
     // Delete the strategy by ID
     const deletedStrategy = await Strategy.findByIdAndDelete(id);
-
-    // Handle case when the strategy is not found
-    if (!deletedStrategy) {
-      return res.status(404).json({ error: "Strategy not found." });
-    }
 
     // Respond with success message
     return res.status(200).json({ message: "Strategy successfully deleted.", strategy: deletedStrategy });

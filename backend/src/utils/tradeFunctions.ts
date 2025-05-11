@@ -102,10 +102,12 @@ export async function closeAllPositions(broker: FyersBroker, openPositions: any[
  */
 export async function findNextContract(
   currentSymbol: mongoose.Types.ObjectId
-): Promise<mongoose.Types.ObjectId | null> {
+): Promise<{ nextSymbol: mongoose.Types.ObjectId | null; message: string }> {
   const currentInstrument = await Instrument.findOne({ _id: currentSymbol });
 
-  if (!currentInstrument) return null;
+  if (!currentInstrument) {
+    return { nextSymbol: null, message: "Current instrument not found" };
+  }
 
   // Find all contracts for the same underlying and exchange
   const availableContracts = await Instrument.find({
@@ -113,13 +115,30 @@ export async function findNextContract(
     exchange: currentInstrument.exchange
   }).sort({ expiry: 1 });
 
+  if (availableContracts.length === 0) {
+    return { nextSymbol: null, message: "No contracts available for this instrument" };
+  }
+
+  // Get unique expiry months from the contracts
+  const uniqueExpiryMonths = [
+    ...new Set(
+      availableContracts.map((contract) => new Date(contract.expiry).toLocaleString("en-US", { month: "short" }))
+    )
+  ];
   // Get the next expiry after the current one
   for (let i = 0; i < availableContracts.length - 1; i++) {
     if (availableContracts[i]._id.equals(currentSymbol)) {
-      return availableContracts[i + 1]._id; // Return next expiry
+      return {
+        nextSymbol: availableContracts[i + 1]._id,
+        message: `Next contract foun}`
+      };
     }
   }
-  return null;
+  // If no next contract, return available months
+  return {
+    nextSymbol: null,
+    message: `No next symbol available. Available expiries: ${uniqueExpiryMonths.join(", ")}`
+  };
 }
 /**
  * Open new positions with the new contract after rollover for a specific symbol
