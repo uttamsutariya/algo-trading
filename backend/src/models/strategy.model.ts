@@ -28,9 +28,8 @@ const strategySchema = new Schema(
       default: null
     },
     broker: {
-      type: String,
-      enum: Object.values(BrokersAvailable),
-      default: BrokersAvailable.FYERS,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "BrokerCredentials",
       required: true
     }
   },

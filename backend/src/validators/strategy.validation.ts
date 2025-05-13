@@ -3,6 +3,7 @@ import { IStrategyInput } from "../rest/controllers/strategy.controller";
 import mongoose from "mongoose";
 import Instrument from "../models/instruments.model";
 import Strategy from "../models/strategy.model";
+import BrokerModel from "../models/broker.model";
 
 type ValidationResult = {
   isValid: boolean;
@@ -110,13 +111,24 @@ export const validateCreateStrategy = async (data: IStrategyInput): Promise<Vali
   validatedData.rollOverOn = data.rollOverOn || null;
 
   // Validate broker
-  if (!data.broker || !Object.values(BrokersAvailable).includes(data.broker)) {
+
+  if (!data.broker || !mongoose.Types.ObjectId.isValid(data.broker)) {
     return {
       isValid: false,
-      error: `Invalid broker. Allowed values: ${Object.values(BrokersAvailable).join(", ")}.`,
+      error: "Invalid broker ID format.",
       validatedData
     };
   }
+
+  const broker = await BrokerModel.findById(data.broker);
+  if (!broker) {
+    return {
+      isValid: false,
+      error: "Broker not found with the provided ID.",
+      validatedData
+    };
+  }
+
   validatedData.broker = data.broker;
 
   return { isValid: true, validatedData };
@@ -212,13 +224,22 @@ export const validateUpdateStrategy = async (
 
   // Validate broker if provided
   if (data.broker !== undefined) {
-    if (!Object.values(BrokersAvailable).includes(data.broker)) {
+    if (!mongoose.Types.ObjectId.isValid(data.broker)) {
       return {
         isValid: false,
-        error: `Invalid broker. Allowed values: ${Object.values(BrokersAvailable).join(", ")}.`,
+        error: "Invalid broker ID format.",
         validatedData
       };
     }
+    const broker = await BrokerModel.findById(data.broker);
+    if (!broker) {
+      return {
+        isValid: false,
+        error: "Broker not found with the provided ID.",
+        validatedData
+      };
+    }
+
     validatedData.broker = data.broker;
   }
 

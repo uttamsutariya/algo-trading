@@ -8,7 +8,7 @@ import { TradeTaskWorker } from "./queue/TradeTaskWorker";
 import strategyRoutes from "./rest/routes/strategy.routes";
 import instrumentsRoutes from "./rest/routes/instruments.routes";
 import authRoutes from "./rest/routes/auth";
-import fyresAuthRoutes from "./rest/routes/fyresAuth";
+import fyresAuthRoutes from "./rest/routes/fyres.routes";
 
 import "./cron/instrumentsUpdate"; // Import the cron job to update symbols daily
 

@@ -39,9 +39,6 @@ export class RolloverTaskWorker {
             return;
           }
 
-          // // Close positions
-          await closeAllPositions(broker, openPositions, strategy._id);
-
           // Find the next contract
           const nextSymbol = await findNextContract(strategy.symbol);
           if (!nextSymbol) {
@@ -63,6 +60,9 @@ export class RolloverTaskWorker {
               console.error("Failed to update strategy with new symbol ID:", error);
             }
           }
+
+          // // Close positions
+          await closeAllPositions(broker, openPositions, strategy._id);
 
           // // Reopen positions with the new contract
           const nextSymbolId = nextSymbol.nextSymbol;
