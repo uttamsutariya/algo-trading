@@ -187,7 +187,11 @@ export const updateStrategySymbol = async (id: string, newSymbolId: mongoose.Typ
     throw new Error("Invalid strategy ID.");
   }
 
-  const updatedStrategy = await Strategy.findByIdAndUpdate(id, { symbol: newSymbolId }, { new: true });
+  const updatedStrategy = await Strategy.findByIdAndUpdate(
+    id,
+    { symbol: newSymbolId },
+    { new: true, runValidators: true }
+  );
 
   if (!updatedStrategy) {
     throw new Error("Strategy not found.");

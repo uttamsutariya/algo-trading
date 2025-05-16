@@ -66,8 +66,7 @@ export class TradeTaskWorker {
       // Step 3: Fetch active Fyers broker for this user
 
       const brokerRecord = await BrokerModel.findOne({
-        // "credentials.fy_id": task.data.fy_id,
-        broker_name: "fyers",
+        _id: strategy.broker,
         is_active: true
       });
       if (!brokerRecord) {

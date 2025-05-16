@@ -33,10 +33,16 @@ export const createStrategy = async (req: Request, res: Response) => {
     // Schedule the rollover job using BullMQ
     if (savedStrategy.rollOverOn) {
       console.log("schedule rollover job");
+
+      // rollOverOn is in IST — convert to UTC for delay calculation
+      const istTimestamp = new Date(savedStrategy.rollOverOn).getTime();
+      const utcTimestamp = istTimestamp - 5.5 * 60 * 60 * 1000; // IST - UTC offset
+      const delay = utcTimestamp - Date.now();
+
       await rolloverQueue.add(
-        "execute-rollover",
+        "rolloverQueue",
         { strategy: savedStrategy.toObject() },
-        { delay: new Date(savedStrategy.rollOverOn).getTime() - Date.now() } // Delay job until rollOverOn date
+        { delay } // Delay job until rollOverOn date
       );
       console.log("Test job added to queue");
     }

@@ -12,8 +12,7 @@ const redirect_url = process.env.FYERS_REDIRECT_URL!;
 export const fyersLogin = async (req: Request, res: Response) => {
   try {
     console.log(req.body);
-    const { broker_id } = req.body; // Use query if redirecting
-
+    const { broker_id } = req.body;
     if (!broker_id) {
       return res.status(400).send("Error: Missing broker_id");
     }

@@ -1,9 +1,10 @@
 import cron from "node-cron";
 import axios from "axios";
 import BrokerModel from "../models/broker.model";
-import { FyersCredentials } from "../models/broker.model"; // 🔹 Import the type
+import { FyersCredentials } from "../models/broker.model";
 
 // Function to refresh access token
+
 const refreshAccessToken = async () => {
   try {
     console.log("Running daily access token refresh...");
@@ -17,7 +18,7 @@ const refreshAccessToken = async () => {
       // Type Assertion: Tell TypeScript that these credentials are FyersCredentials
       const fyersCredentials = broker.credentials as FyersCredentials;
       const { refresh_token, fy_id } = fyersCredentials;
-      const tokenIssuedAt = new Date(broker.token_issued_at);
+      const tokenIssuedAt = new Date(broker.token_issued_at ?? Date.now());
 
       // Calculate how many days have passed since the refresh token was issued
       const daysSinceIssued = (Date.now() - tokenIssuedAt.getTime()) / (1000 * 60 * 60 * 24);
