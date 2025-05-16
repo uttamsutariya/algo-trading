@@ -41,7 +41,7 @@ const BrokerSchema = new Schema<IBroker>(
     },
     is_active: {
       type: Boolean,
-      default: true,
+      default: false,
       index: true
     },
     credentials: {

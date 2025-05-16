@@ -26,7 +26,7 @@ const refreshAccessToken = async () => {
       if (daysSinceIssued >= 15) {
         console.warn(`Refresh token expired for broker: ${fy_id}. User must reauthenticate.`);
 
-        // Instead of trying to refresh, mark user as inactive and require reauthentication
+        //  mark user as inactive and require reauthentication
         broker.is_active = false;
         await broker.save();
 

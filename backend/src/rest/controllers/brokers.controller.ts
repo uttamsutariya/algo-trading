@@ -22,7 +22,6 @@ export const addBroker = async (req: Request, res: Response) => {
     // Create new broker
     const newBroker = new BrokerModel({
       broker_name: name,
-      is_active: true,
       credentials: {
         client_id: client_id,
         secret_key: secret_key
