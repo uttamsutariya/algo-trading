@@ -10,8 +10,8 @@ import {
 import { FyersBroker } from "../brokersApi/FyersBroker";
 import brokerConfig from "../config/broker.config";
 
-// Create a FyersBroker instance using credentials
-const broker = FyersBroker.getInstance(brokerConfig.fyers);
+// // Create a FyersBroker instance using credentials
+// const broker = FyersBroker.getInstance(brokerConfig.fyers);
 
 export class RolloverTaskWorker {
   private worker: Worker;
@@ -33,7 +33,7 @@ export class RolloverTaskWorker {
           console.log(`Executing rollover job for strategy: ${strategy.name}`);
 
           // // Fetch open positions
-          const openPositions = await getOpenOrders(broker, strategy._id);
+          const openPositions = await getOpenOrders(strategy._id);
           if (!openPositions.length) {
             console.log(`No open positions found for strategy ${strategy.name}`);
             return;
@@ -62,13 +62,13 @@ export class RolloverTaskWorker {
           }
 
           // // Close positions
-          await closeAllPositions(broker, openPositions, strategy._id);
+          await closeAllPositions(openPositions, strategy._id);
 
           // // Reopen positions with the new contract
           const nextSymbolId = nextSymbol.nextSymbol;
 
           if (nextSymbolId) {
-            await openNewPositions(broker, openPositions, nextSymbolId);
+            await openNewPositions(openPositions, nextSymbolId, strategy._id);
             console.log(`Rollover completed successfully for strategy: ${strategy.name}`);
           } else {
             console.log(`No valid next contract found. Skipping position re-opening for strategy: ${strategy.name}`);

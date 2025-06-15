@@ -3,12 +3,13 @@ import { FyersBroker } from "../brokersApi/FyersBroker";
 import Instrument from "../models/instruments.model";
 import Strategy from "../models/strategy.model";
 import mongoose from "mongoose";
+import BrokerModel, { FyersCredentials } from "../models/broker.model";
+import { getBrokerInstance } from "./broker";
 
-/**
 /**
  * Fetch open positions for a given strategy's symbol
  */
-export async function getOpenOrders(broker: FyersBroker, strategyId: string) {
+export async function getOpenOrders(strategyId: string) {
   try {
     // 1. Find the strategy
     const strategy = await Strategy.findById(strategyId);
@@ -30,6 +31,18 @@ export async function getOpenOrders(broker: FyersBroker, strategyId: string) {
     }
 
     const fyresSymbol = symbolObject.brokerSymbols.fyers;
+    const brokerId = strategy.broker;
+    const brokerDoc = await BrokerModel.findById(brokerId);
+
+    if (!brokerDoc) {
+      console.error(`Broker with ID ${brokerId} not found.`);
+      return [];
+    }
+
+    const fyersCredentials = brokerDoc.credentials as FyersCredentials;
+    const accessToken = fyersCredentials.access_token;
+    const appId = fyersCredentials.client_id;
+    const broker = new FyersBroker(appId, accessToken);
 
     // 3. Fetch all open orders from the external order book API
     const response = await broker.getOrderBook(); // Replace with actual API
@@ -60,7 +73,13 @@ export async function getOpenOrders(broker: FyersBroker, strategyId: string) {
 /**
  * Close all open positions before rollover for a specific symbol
  */
-export async function closeAllPositions(broker: FyersBroker, openPositions: any[], strategyId: string): Promise<void> {
+export async function closeAllPositions(openPositions: any[], strategyId: string): Promise<void> {
+  const broker = await getBrokerInstance(strategyId);
+  if (!broker) {
+    console.error("Failed to get broker instance");
+    return;
+  }
+
   // 1. Fetch the correct symbol from the Instrument table using strategyId
   const strategy = await Strategy.findById(strategyId);
   if (!strategy) {
@@ -140,14 +159,21 @@ export async function findNextContract(
     message: `No next symbol available. Available expiries: ${uniqueExpiryMonths.join(", ")}`
   };
 }
+
 /**
  * Open new positions with the new contract after rollover for a specific symbol
  */
 export async function openNewPositions(
-  broker: FyersBroker,
   previousPositions: any[],
-  nextSymbolId: mongoose.Types.ObjectId | null
+  nextSymbolId: mongoose.Types.ObjectId | null,
+  strategyId: string
 ): Promise<void> {
+  const broker = await getBrokerInstance(strategyId);
+  if (!broker) {
+    console.error("Failed to get broker instance");
+    return;
+  }
+
   // Prevent execution if `nextSymbolId` is null
   if (!nextSymbolId) {
     console.error(` Cannot open new positions: No next contract available.`);

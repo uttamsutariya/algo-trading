@@ -1,7 +1,6 @@
 import { BaseBroker } from "./BaseBroker";
-import { OrderRequest, OrderResponse, BrokerConfig } from "../types/broker.types";
-import axios from "axios";
-const FyersAPI = require("fyers-api-v3").fyersModel; // Ensure this is placed correctly at the top
+import { OrderRequest, OrderResponse } from "../types/broker.types";
+import axios, { AxiosInstance } from "axios";
 
 interface FyersOrderResponse {
   s: string; // Status: "ok" for success, "error" for failure
@@ -9,74 +8,97 @@ interface FyersOrderResponse {
   message: string; // Response message
   id?: string; // Optional: A unique identifier for the request
   orderBook: Array<{
-    symbol: string; // The symbol of the order (e.g., "NSE:IDEA-EQ")
-    status: number; // Status of the order (e.g., 2 for open, other values for different statuses)
-    orderId: string; // Unique identifier for the order
-    qty: number; // Quantity of the order
-  }>; // Contains an array of order objects
+    symbol: string;
+    status: number;
+    orderId: string;
+    qty: number;
+  }>;
+}
+
+interface FyersProfileResponse {
+  s: string;
+  code: number;
+  message: string;
+  data?: {
+    name: string;
+    email: string;
+  };
 }
 
 export class FyersBroker extends BaseBroker {
-  private static instance: FyersBroker;
-  private config: BrokerConfig;
   private readonly baseUrl = "https://api-t1.fyers.in/api/v3";
-  private authToken: string;
 
-  private constructor(config: BrokerConfig) {
+  // appId is the client_id that we store in the database
+  private readonly appId: string;
+  private readonly accessToken: string;
+
+  // authToken is the client_id:access_token
+  private readonly authToken: string;
+  private readonly axiosInstance: AxiosInstance;
+
+  constructor(appId: string, accessToken: string) {
     super();
-    this.config = config;
-    this.authToken = `${config.appId}:${config.accessToken}`;
-  }
-
-  public static getInstance(config: BrokerConfig): FyersBroker {
-    if (!FyersBroker.instance) {
-      FyersBroker.instance = new FyersBroker(config);
+    if (!appId || !accessToken) {
+      throw new Error("App ID and Access Token are required");
     }
-    return FyersBroker.instance;
+    this.appId = appId;
+    this.accessToken = accessToken;
+    this.authToken = `${appId}:${accessToken}`;
+
+    // Create axios instance with default config
+    this.axiosInstance = axios.create({
+      baseURL: this.baseUrl,
+      headers: {
+        Authorization: this.authToken,
+        "Content-Type": "application/json"
+      }
+    });
   }
 
   public async initialize(): Promise<void> {
-    // Validate config
-    if (!this.config.appId || !this.config.accessToken) {
-      throw new Error("Missing Fyers credentials");
+    try {
+      // Validate credentials by fetching profile
+      const response = await this.axiosInstance.get<FyersProfileResponse>("/profile");
+      if (response.data.s !== "ok") {
+        throw new Error(`Failed to initialize: ${response.data.message}`);
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Failed to initialize Fyers broker: ${error.response?.data?.message || error.message}`);
+      }
+      throw new Error("Failed to initialize Fyers broker: Unknown error");
     }
   }
 
-  // Fetch orders from Fyers API
-
-  // Fetch orders from Fyers API
   public async getOrderBook(): Promise<FyersOrderResponse> {
-    const fyers = new FyersAPI();
-    fyers.setAppId(this.config.appId);
-    fyers.setRedirectUrl(this.config.redirectUrl);
-    fyers.setAccessToken(this.config.accessToken);
-
     try {
-      const response = await fyers.get_orders(); // Call the Fyers API to fetch orders
-      if (response && response.s === "ok") {
-        return response; // If successful, return the orders data
+      const response = await this.axiosInstance.get<FyersOrderResponse>("/orders");
+
+      if (response.data.s === "ok") {
+        return response.data;
       } else {
-        console.error("Error fetching orders:", response.message);
-        return { s: "error", code: 400, message: response.message, orderBook: [] }; // Return empty if error
+        console.error("Error fetching orders:", response.data.message);
+        return {
+          s: "error",
+          code: response.data.code || 400,
+          message: response.data.message,
+          orderBook: []
+        };
       }
     } catch (error) {
       console.error("Error fetching orders from Fyers:", error);
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Failed to fetch orders: ${error.response?.data?.message || error.message}`);
+      }
       throw new Error("Failed to fetch orders from Fyers API");
     }
   }
-  // Method to place an order
 
   public async placeOrder(request: OrderRequest): Promise<OrderResponse> {
     try {
-      const response = await axios.post<FyersOrderResponse>(
-        `${this.baseUrl}/orders/sync`,
-        this.mapToFyersRequest(request),
-        {
-          headers: {
-            Authorization: this.authToken,
-            "Content-Type": "application/json"
-          }
-        }
+      const response = await this.axiosInstance.post<FyersOrderResponse>(
+        "/orders/sync",
+        this.mapToFyersRequest(request)
       );
 
       const { data } = response;
@@ -95,11 +117,11 @@ export class FyersBroker extends BaseBroker {
         error: `Order failed with code: ${data.code}`
       };
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.data) {
+      if (axios.isAxiosError(error)) {
         return {
           success: false,
           message: "Order placement failed",
-          error: error.response.data.message || error.message
+          error: error.response?.data?.message || error.message
         };
       }
       return {

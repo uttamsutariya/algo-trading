@@ -1,11 +1,8 @@
 import { QueueClient } from "./QueueClient";
 import { QueueTask } from "../types/queue.types";
 import Strategy from "../models/strategy.model";
-import { FyersBroker } from "../brokersApi/FyersBroker";
-import config from "../config/broker.config";
 import Instrument from "../models/instruments.model";
-import BrokerModel from "../models/broker.model";
-import { FyersCredentials } from "../models/broker.model";
+import { getBrokerInstance } from "../utils/broker";
 
 export class TradeTaskWorker {
   private queueClient: QueueClient;
@@ -63,24 +60,10 @@ export class TradeTaskWorker {
         throw new Error(`Symbol not found: ${strategy.symbol}`);
       }
 
-      // Step 3: Fetch active Fyers broker for this user
-
-      const brokerRecord = await BrokerModel.findOne({
-        _id: strategy.broker,
-        is_active: true
-      });
-      if (!brokerRecord) {
-        throw new Error("No active Fyers broker found for this user. Please reauthenticate.");
+      const broker = await getBrokerInstance(strategy._id.toString());
+      if (!broker) {
+        throw new Error("Failed to get broker instance");
       }
-
-      const { client_id, access_token } = brokerRecord.credentials as FyersCredentials;
-      // Step 4: Initialize broker for placing the order
-      const broker = FyersBroker.getInstance({
-        appId: client_id,
-        accessToken: access_token,
-        redirectUrl: config.fyers.redirectUrl
-      });
-      await broker.initialize();
 
       // Step 4: Place order using the broker's API
       const orderResponse = await broker.placeOrder({

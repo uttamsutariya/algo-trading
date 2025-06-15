@@ -49,7 +49,10 @@ const refreshAccessToken = async () => {
         const { access_token } = tokenResponse.data;
 
         //Update access token and reset token issued timestamp in DB
-        fyersCredentials.access_token = access_token;
+        broker.credentials = {
+          ...fyersCredentials,
+          access_token
+        };
         broker.token_issued_at = new Date(); // Set new issue time
         await broker.save();
 
