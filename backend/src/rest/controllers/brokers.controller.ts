@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 
 import BrokerModel, { FyersCredentials, IBroker } from "../../models/broker.model";
-import { BrokerCredentials } from "../../models/broker.model";
 
 // add brokers
 
@@ -9,7 +8,7 @@ export const addBroker = async (req: Request, res: Response) => {
   try {
     const { name, client_id, secret_key } = req.body;
 
-    if (!name || !client_id || !secret_key) {
+    if (!client_id || !secret_key) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -21,7 +20,7 @@ export const addBroker = async (req: Request, res: Response) => {
 
     // Create new broker
     const newBroker = new BrokerModel({
-      broker_name: name,
+      broker_name: name || "fyers",
       credentials: {
         client_id: client_id,
         secret_key: secret_key
@@ -74,10 +73,6 @@ export const viewAllFyersBrokers = async (req: Request, res: Response) => {
   try {
     // Fetch only Fyers brokers
     const brokers: IBroker[] = await BrokerModel.find({ broker_name: "fyers" });
-
-    if (!brokers || brokers.length === 0) {
-      return res.status(404).json({ message: "No Fyers brokers found." });
-    }
 
     res.status(200).json({
       message: "Fyers brokers fetched successfully",

@@ -8,10 +8,10 @@ import { FyersCredentials } from "../../models/broker.model";
 require("dotenv").config();
 
 const redirect_url = process.env.FYERS_REDIRECT_URL!;
+const FYERS_BASE_URL = "https://api-t1.fyers.in/api/v3";
 
 export const fyersLogin = async (req: Request, res: Response) => {
   try {
-    console.log(req.body);
     const { broker_id } = req.body;
     if (!broker_id) {
       return res.status(400).send("Error: Missing broker_id");
@@ -19,12 +19,12 @@ export const fyersLogin = async (req: Request, res: Response) => {
 
     // Get broker credentials
     const brokerCredentialsInfo = await getBrokerCredentials(broker_id);
-    const { client_id, secret_key } = brokerCredentialsInfo.credentials as FyersCredentials;
+    const { client_id } = brokerCredentialsInfo.credentials as FyersCredentials;
 
-    const state = encodeURIComponent(JSON.stringify({ broker_id }));
-    const authUrl = `https://api-t1.fyers.in/api/v3/generate-authcode?client_id=${client_id}&redirect_uri=${redirect_url}&response_type=code&state=${state}`;
+    const state = Buffer.from(JSON.stringify({ broker_id })).toString("base64");
+    const authUrl = `${FYERS_BASE_URL}/generate-authcode?client_id=${client_id}&redirect_uri=${redirect_url}&response_type=code&state=${state}`;
 
-    res.redirect(authUrl);
+    return res.status(200).json({ authUrl });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).send("Internal Server Error");
@@ -38,21 +38,30 @@ export const fyersCallback = async (req: Request, res: Response) => {
     return res.status(400).send("Missing auth_code or state");
   }
 
-  const { broker_id } = JSON.parse(state);
+  const decodedState = Buffer.from(state, "base64").toString("utf-8");
+  const { broker_id } = JSON.parse(decodedState);
 
   if (!broker_id) {
     return res.status(400).send("Missing broker_id in state");
   }
 
+  let broker = await BrokerModel.findOne({ _id: broker_id });
+
+  if (!broker) {
+    return res.status(400).send("Broker not found");
+  }
+
   try {
     // Get credentials dynamically using broker_id
-    const brokerCredentialsInfo = await getBrokerCredentials(broker_id);
-    const { client_id, secret_key } = brokerCredentialsInfo.credentials as FyersCredentials;
+    const { client_id, secret_key } = broker.credentials as FyersCredentials;
+
+    if (!client_id || !secret_key) {
+      return res.status(400).send("Missing client_id or secret_key");
+    }
 
     // Step 1: Exchange auth_code for access_token
-
     const tokenResponse = await axios.post(
-      "https://api-t1.fyers.in/api/v3/validate-authcode",
+      `${FYERS_BASE_URL}/validate-authcode`,
       {
         grant_type: "authorization_code",
         appIdHash: generateAppIdHash(client_id, secret_key),
@@ -72,7 +81,7 @@ export const fyersCallback = async (req: Request, res: Response) => {
     }
 
     // Step 2: Fetch profile
-    const profileResponse = await axios.get("https://api-t1.fyers.in/api/v3/profile", {
+    const profileResponse = await axios.get(`${FYERS_BASE_URL}/profile`, {
       headers: {
         Authorization: `${client_id}:${access_token}`
       }
@@ -86,37 +95,18 @@ export const fyersCallback = async (req: Request, res: Response) => {
       throw new Error("Failed to retrieve fy_id from profile");
     }
 
-    // Step 3: Save or update broker
-    let broker = await BrokerModel.findOne({ "credentials.fy_id": fy_id });
+    broker.credentials = {
+      fy_id,
+      access_token,
+      refresh_token,
+      client_id,
+      secret_key
+    };
+    broker.token_issued_at = issuedAt;
+    broker.is_active = true;
+    await broker.save();
 
-    if (broker) {
-      broker.credentials = {
-        fy_id,
-        access_token,
-        refresh_token,
-        client_id,
-        secret_key
-      };
-      broker.token_issued_at = issuedAt;
-      await broker.save();
-    } else {
-      broker = new BrokerModel({
-        broker_name: "fyers",
-        is_active: true,
-        credentials: {
-          fy_id,
-          access_token,
-          refresh_token,
-          client_id,
-          secret_key
-        },
-        token_issued_at: issuedAt
-      });
-      await broker.save();
-    }
-
-    console.log("Broker credentials saved successfully");
-    res.redirect("http://localhost:3000");
+    return res.redirect(process.env.FRONTEND_URL || "http://localhost:3000");
   } catch (error) {
     console.error("Callback error:", error);
     res.status(500).json({ error: "Failed to complete authentication" });
