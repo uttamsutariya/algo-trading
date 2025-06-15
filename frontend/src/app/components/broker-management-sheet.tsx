@@ -75,8 +75,14 @@ export function BrokerManagementSheet({ open, onOpenChange }: BrokerManagementSh
                   <div key={broker._id} className="p-4 rounded-lg border bg-card text-card-foreground shadow-sm">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="font-semibold capitalize">{broker.broker_name}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">Client ID: {broker.credentials.client_id}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Fy ID: <span className="font-semibold text-black">{broker.credentials.fy_id || "N/A"}</span>
+                        </p>
+
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Client ID:{" "}
+                          <span className="font-semibold text-black">{broker.credentials.client_id || "N/A"}</span>
+                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={broker.is_active ? "default" : "secondary"}>

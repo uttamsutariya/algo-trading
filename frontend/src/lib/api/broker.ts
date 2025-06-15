@@ -7,6 +7,7 @@ export interface Broker {
   credentials: {
     client_id: string;
     secret_key: string;
+    fy_id?: string;
   };
   createdAt: string;
   updatedAt: string;
