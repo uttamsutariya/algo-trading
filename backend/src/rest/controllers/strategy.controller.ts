@@ -3,7 +3,7 @@ import { StrategyStatus, BrokersAvailable } from "../../types/enums";
 import { validateCreateStrategy, validateUpdateStrategy } from "../../validators/strategy.validation";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
-import rolloverQueue from "../../queue/rolloverQueue";
+import { RolloverQueueManager } from "../../queue/RolloverQueueManager";
 // Interface for Request Body
 export interface IStrategyInput {
   name: string;
@@ -30,7 +30,7 @@ export const createStrategy = async (req: Request, res: Response) => {
     const savedStrategy = await newStrategy.save();
     console.log(savedStrategy, "save strategy");
 
-    // Schedule the rollover job using BullMQ
+    // Schedule the rollover job using RolloverQueueManager
     if (savedStrategy.rollOverOn) {
       console.log("schedule rollover job");
 
@@ -39,12 +39,12 @@ export const createStrategy = async (req: Request, res: Response) => {
       const utcTimestamp = istTimestamp - 5.5 * 60 * 60 * 1000; // IST - UTC offset
       const delay = utcTimestamp - Date.now();
 
-      await rolloverQueue.add(
-        "rolloverQueue",
+      const rolloverQueueManager = RolloverQueueManager.getInstance();
+      await rolloverQueueManager.addJob(
         { strategy: savedStrategy.toObject() },
         { delay } // Delay job until rollOverOn date
       );
-      console.log("Test job added to queue");
+      console.log("Rollover job added to queue");
     }
     // Populate the instrument details before sending response
     const populatedStrategy = await savedStrategy.populate("symbol");

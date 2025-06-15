@@ -1,7 +1,6 @@
 import { Job } from "bullmq";
 import { BaseQueueManager } from "./BaseQueueManager";
 import { queueConfigs } from "./config/queue.config";
-import Strategy from "../models/strategy.model";
 import { Types } from "mongoose";
 import {
   getOpenOrders,

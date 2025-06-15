@@ -3,8 +3,7 @@ dotenv.config();
 
 import express, { Express, Request, Response } from "express";
 import cors from "cors";
-import { webhookController } from "./rest/controllers/webhook.controller";
-import { TradeTaskWorker } from "./queue/TradeTaskWorker";
+import { handleWebhook } from "./rest/controllers/webhook.controller";
 import strategyRoutes from "./rest/routes/strategy.routes";
 import instrumentsRoutes from "./rest/routes/instruments.routes";
 import authRoutes from "./rest/routes/auth";
@@ -36,6 +35,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/strategies", strategyRoutes); // make it protected later
 app.use("/api", instrumentsRoutes); // make it protected later
 app.use("/api", brokerRoutes); // make it protected later
-app.use("/api/webhook", webhookController); // webhook processor
+app.post("/api/webhook", handleWebhook);
 
 export default app;

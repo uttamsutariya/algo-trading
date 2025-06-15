@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import Strategy from "../../models/strategy.model";
 import { TradeQueueManager } from "../../queue/TradeQueueManager";
 import { TradeJobData } from "../../types/queue.types";
-import BrokerModel from "../../models/broker.model";
 
 interface WebhookRequest {
   strategyId: string;
