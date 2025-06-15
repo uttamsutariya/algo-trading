@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StrategyTable } from "@/app/components/strategy-table";
 import { AddStrategyModal } from "@/app/components/add-strategy-modal";
-import { Search, Plus } from "lucide-react";
+import { BrokerManagementSheet } from "@/app/components/broker-management-sheet";
+import { Search, Plus, Settings } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 
@@ -20,16 +21,23 @@ export default function DashboardPage() {
   });
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isBrokerSheetOpen, setIsBrokerSheetOpen] = useState(false);
   const { setSearchQuery, setStatusFilter, statusFilter } = useStrategyStore();
 
   return (
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold">Trading Strategies</h1>
-        <Button onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Strategy
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsBrokerSheetOpen(true)}>
+            <Settings className="mr-2 h-4 w-4" />
+            Manage Brokers
+          </Button>
+          <Button onClick={() => setIsAddModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Strategy
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4">
@@ -56,6 +64,7 @@ export default function DashboardPage() {
       <StrategyTable />
 
       <AddStrategyModal open={isAddModalOpen} onOpenChange={setIsAddModalOpen} />
+      <BrokerManagementSheet open={isBrokerSheetOpen} onOpenChange={setIsBrokerSheetOpen} />
     </div>
   );
 }
