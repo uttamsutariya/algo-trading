@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import Strategy from "../../models/strategy.model";
-import { findNextContract, updateStrategySymbol } from "../../utils/tradeFunctions";
+import { RolloverQueueManager } from "../../queue/RolloverQueueManager";
 
 export const rollover = async (req: Request, res: Response) => {
   try {
@@ -16,26 +16,24 @@ export const rollover = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Strategy not found" });
     }
 
-    // Find the next contract
-    const { nextSymbol, message } = await findNextContract(strategy.symbol);
-    if (!nextSymbol) {
-      console.log(`No next contract found for strategy ${strategy.name}`);
-      return res.status(404).json({ message });
-    }
+    // Get the rollover queue manager instance
+    const rolloverQueueManager = RolloverQueueManager.getInstance();
 
-    console.log(`Next contract found for strategy ${strategy.name}`, nextSymbol);
+    // Add the rollover job to the queue
+    const job = await rolloverQueueManager.addRolloverJob({
+      strategy: {
+        _id: strategy._id.toString(),
+        name: strategy.name,
+        symbol: strategy.symbol.toString()
+      }
+    });
 
-    // Update the strategy with the new symbol ID
-    try {
-      const updatedStrategy = await updateStrategySymbol(strategy._id.toString(), nextSymbol);
-      console.log(`Strategy ${strategy.name} updated with new symbol ID: ${updatedStrategy.symbol}`);
-      return res.status(200).json({ message: "Rollover successful", updatedStrategy });
-    } catch (error) {
-      console.error("Failed to update strategy with new symbol ID:", error);
-      return res.status(500).json({ message: "Failed to update strategy", error });
-    }
+    return res.status(200).json({
+      message: "Rollover job added to queue",
+      jobId: job.id
+    });
   } catch (error) {
-    console.error("Internal server error:", error);
+    console.error("Error processing rollover request:", error);
     return res.status(500).json({ message: "Internal server error", error });
   }
 };

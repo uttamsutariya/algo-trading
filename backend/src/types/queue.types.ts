@@ -1,3 +1,18 @@
+export interface TradeJobData {
+  strategyId: string;
+  qty: number;
+  side: "buy" | "sell";
+}
+
+export interface RolloverJobData {
+  strategy: {
+    _id: string;
+    name: string;
+    symbol: string;
+  };
+}
+
+// Legacy types (to be removed after migration)
 export interface TradeTask {
   strategyId: string;
   qty: number;
@@ -15,8 +30,8 @@ export interface QueueTask {
 }
 
 export enum TaskStatus {
-  PENDING = "pending",
-  PROCESSING = "processing",
-  COMPLETED = "completed",
-  FAILED = "failed"
+  PENDING = "PENDING",
+  PROCESSING = "PROCESSING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED"
 }

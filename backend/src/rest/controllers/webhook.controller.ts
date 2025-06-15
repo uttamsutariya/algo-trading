@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import Strategy from "../../models/strategy.model";
-import { QueueClient } from "../../queue/QueueClient";
-import { TradeTask } from "../../types/queue.types";
+import { TradeQueueManager } from "../../queue/TradeQueueManager";
+import { TradeJobData } from "../../types/queue.types";
 import BrokerModel from "../../models/broker.model";
 
 interface WebhookRequest {
@@ -69,46 +69,30 @@ const validateWebhookRequest = async (
   };
 };
 
-export const webhookController = async (req: Request, res: Response) => {
+export const handleWebhook = async (req: Request, res: Response) => {
   try {
-    const validation = await validateWebhookRequest(req.body);
+    const { isValid, error, validatedData } = await validateWebhookRequest(req.body);
 
-    if (!validation.isValid || !validation.validatedData) {
-      return res.status(400).json({
-        status: "error",
-        error: validation.error
-      });
+    if (!isValid || !validatedData) {
+      return res.status(400).json({ error });
     }
 
-    const { strategyId, qty, side } = validation.validatedData;
-    // Create trade task
-    const tradeTask: TradeTask = {
-      strategyId,
-      qty,
-      side,
-      timestamp: new Date().toISOString()
-    };
+    // Get the trade queue manager instance
+    const tradeQueueManager = TradeQueueManager.getInstance();
 
-    // Add task to queue
-    const queueClient = QueueClient.getInstance();
-    const taskId = await queueClient.addTask(tradeTask);
+    // Add the trade job to the queue
+    const job = await tradeQueueManager.addTradeJob({
+      strategyId: validatedData.strategyId,
+      qty: validatedData.qty,
+      side: validatedData.side
+    });
 
     return res.status(200).json({
-      status: "success",
-      message: "Trade task queued successfully",
-      data: {
-        taskId,
-        ...validation.validatedData
-      }
+      message: "Trade job added to queue",
+      jobId: job.id
     });
-  } catch (err) {
-    const error = err as Error;
-    console.error("Webhook processing error:", error);
-
-    return res.status(500).json({
-      status: "error",
-      error: "Internal server error",
-      details: error.message
-    });
+  } catch (error) {
+    console.error("Error processing webhook:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
