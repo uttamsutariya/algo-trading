@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StrategyTable } from "@/app/components/strategy-table";
 import { AddStrategyModal } from "@/app/components/add-strategy-modal";
 import { BrokerManagementSheet } from "@/app/components/broker-management-sheet";
-import { Search, Plus, Settings } from "lucide-react";
+import { Search, Plus, Settings, Link2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   const { data: session } = useSession({
@@ -24,11 +25,33 @@ export default function DashboardPage() {
   const [isBrokerSheetOpen, setIsBrokerSheetOpen] = useState(false);
   const { setSearchQuery, setStatusFilter, statusFilter } = useStrategyStore();
 
+  const handleCopyWebhookUrl = () => {
+    const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL;
+
+    if (!webhookUrl) {
+      toast.error("Webhook URL not configured");
+      return;
+    }
+
+    navigator.clipboard
+      .writeText(webhookUrl)
+      .then(() => {
+        toast.success("Webhook URL copied to clipboard!");
+      })
+      .catch(() => {
+        toast.error("Failed to copy webhook URL");
+      });
+  };
+
   return (
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold">Trading Strategies</h1>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handleCopyWebhookUrl}>
+            <Link2 className="mr-2 h-4 w-4" />
+            Copy Webhook URL
+          </Button>
           <Button variant="outline" onClick={() => setIsBrokerSheetOpen(true)}>
             <Settings className="mr-2 h-4 w-4" />
             Manage Brokers
