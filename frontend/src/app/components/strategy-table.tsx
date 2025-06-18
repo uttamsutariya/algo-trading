@@ -5,7 +5,15 @@ import { useStrategyStore } from "@/store/useStrategyStore";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2, Copy } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription
+} from "@/components/ui/dialog";
+import { Edit2, Trash2, Copy, RefreshCw, CopyIcon } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { EditStrategyModal } from "./edit-strategy-modal";
@@ -16,6 +24,9 @@ import { toast } from "sonner";
 export function StrategyTable() {
   const [editingStrategy, setEditingStrategy] = useState<Strategy | null>(null);
   const [deletingStrategyId, setDeletingStrategyId] = useState<string | null>(null);
+  const [rolloverConfirmOpen, setRolloverConfirmOpen] = useState(false);
+  const [deleteStrategyOpen, setDeleteStrategyOpen] = useState(false);
+  const [rolloverStrategyId, setRolloverStrategyId] = useState<string | null>(null);
   const { searchQuery, statusFilter } = useStrategyStore();
   const queryClient = useQueryClient();
 
@@ -34,9 +45,12 @@ export function StrategyTable() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["strategies"] });
       toast.success("Strategy deleted successfully");
+      setDeleteStrategyOpen(false);
+      setDeletingStrategyId(null);
     },
     onError: () => {
       toast.error("Failed to delete strategy");
+      setDeletingStrategyId(null);
     }
   });
 
@@ -53,12 +67,27 @@ export function StrategyTable() {
     }
   });
 
+  const rolloverMutation = useMutation({
+    mutationFn: (id: string) => strategyApi.rolloverStrategy(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["strategies"] });
+      toast.success("Strategy rollover initiated successfully");
+      setRolloverConfirmOpen(false);
+      setRolloverStrategyId(null);
+    },
+    onError: () => {
+      toast.error("Failed to initiate strategy rollover");
+    }
+  });
+
   const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this strategy?")) {
-      setDeletingStrategyId(id);
-      deleteMutation.mutate(id, {
-        onSettled: () => setDeletingStrategyId(null)
-      });
+    setDeletingStrategyId(id);
+    setDeleteStrategyOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deletingStrategyId) {
+      deleteMutation.mutate(deletingStrategyId);
     }
   };
 
@@ -83,7 +112,7 @@ export function StrategyTable() {
       .then(() => {
         toast.success(
           <div className="text-sm">
-            <strong>Copied Syntax:</strong>
+            <strong>Message Copied</strong>
             <pre className="text-xs">{jsonValue}</pre>
           </div>,
           {
@@ -94,6 +123,17 @@ export function StrategyTable() {
       .catch(() => {
         toast.error("Failed to copy syntax");
       });
+  };
+
+  const handleRolloverClick = (strategyId: string) => {
+    setRolloverStrategyId(strategyId);
+    setRolloverConfirmOpen(true);
+  };
+
+  const handleRolloverConfirm = () => {
+    if (rolloverStrategyId) {
+      rolloverMutation.mutate(rolloverStrategyId);
+    }
   };
 
   if (isLoading) {
@@ -158,8 +198,17 @@ export function StrategyTable() {
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRolloverClick(strategy._id)}
+                    disabled={rolloverMutation.isPending}
+                    title="Roll Over Strategy"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
                   <Button variant="default" size={"sm"} onClick={() => handleCopySyntax(strategy._id)}>
-                    Copy
+                    <CopyIcon className="h-4 w-4" />
                   </Button>
                 </div>
               </TableCell>
@@ -173,6 +222,48 @@ export function StrategyTable() {
         open={!!editingStrategy}
         onOpenChange={(open: boolean) => !open && setEditingStrategy(null)}
       />
+
+      <Dialog open={deleteStrategyOpen} onOpenChange={setDeleteStrategyOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Strategy Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this strategy? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteStrategyOpen(false)} disabled={deleteMutation.isPending}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending ? "Deleting..." : "Delete Strategy"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={rolloverConfirmOpen} onOpenChange={setRolloverConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Strategy Rollover</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to roll over this strategy? This action will initiate the rollover process.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRolloverConfirmOpen(false)}
+              disabled={rolloverMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleRolloverConfirm} disabled={rolloverMutation.isPending}>
+              {rolloverMutation.isPending ? "Rolling over..." : "Confirm Rollover"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

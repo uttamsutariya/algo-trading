@@ -255,36 +255,38 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="broker"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Broker</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value} disabled={loading || isEditMode}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select broker" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {getActiveBrokers().length === 0 ? (
-                    <SelectItem value="no-brokers" disabled>
-                      No active brokers available
-                    </SelectItem>
-                  ) : (
-                    getActiveBrokers().map((broker) => (
-                      <SelectItem key={broker._id} value={broker._id}>
-                        {broker.credentials.fy_id || broker.credentials.client_id}
+        {!isEditMode && (
+          <FormField
+            control={form.control}
+            name="broker"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Broker</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value} disabled={loading || isEditMode}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select broker" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {getActiveBrokers().length === 0 ? (
+                      <SelectItem value="no-brokers" disabled>
+                        No active brokers available
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                    ) : (
+                      getActiveBrokers().map((broker) => (
+                        <SelectItem key={broker._id} value={broker._id}>
+                          {broker.credentials.fy_id || broker.credentials.client_id}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormItem>
           <FormLabel>Roll Over On</FormLabel>

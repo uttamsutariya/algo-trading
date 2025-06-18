@@ -9,6 +9,7 @@ import {
   openNewPositions,
   updateStrategySymbol
 } from "../utils/tradeFunctions";
+import Strategy from "../models/strategy.model";
 
 export interface RolloverJobData {
   strategy: {
@@ -40,6 +41,10 @@ export class RolloverQueueManager extends BaseQueueManager {
     }
 
     console.log(`Executing rollover job for strategy: ${strategy.name}`);
+
+    await Strategy.findByIdAndUpdate(strategy._id, {
+      rollOverOn: null
+    });
 
     // Step 1: Fetch open positions
     const openPositions = await getOpenOrders(strategy._id);

@@ -83,5 +83,15 @@ export const strategyApi = {
       console.error(`Error deleting strategy with ID ${id}:`, error);
       throw error;
     }
+  },
+
+  rolloverStrategy: async (id: string) => {
+    try {
+      const response = await axiosClient.post(`/strategies/rollover/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error rolling over strategy with ID ${id}:`, error);
+      throw error;
+    }
   }
 };
