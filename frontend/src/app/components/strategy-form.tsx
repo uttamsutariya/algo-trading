@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import { useInstruments } from "@/hooks/useInstruments";
 import { Instrument } from "@/hooks/useInstruments";
 import { useBrokerStore } from "@/store/useBrokerStore";
+import { Broker } from "@/lib/api/broker";
 
 import { strategyFormSchema, type StrategyFormValues } from "./strategy-form-schema";
 
@@ -43,8 +44,10 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
     }
   });
 
+  console.log("defaultValues ::", defaultValues);
+
   const { data: instruments } = useInstruments();
-  const { getActiveBrokers } = useBrokerStore();
+  const { getActiveBrokers, brokers } = useBrokerStore();
   const [underlyingOptions, setUnderlyingOptions] = useState<string[]>([]);
   const [exchangeOptions, setExchangeOptions] = useState<string[]>(["NSE"]);
   const [symbolTypeOptions, setSymbolTypeOptions] = useState<string[]>(["future"]);
@@ -56,6 +59,27 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
   const [formError, setFormError] = useState<string>("");
 
   const prioritizedUnderlyings = ["NIFTY", "BANKNIFTY", "FINNIFTY", "GOLDM", "SILVERM"];
+
+  // Get display name for selected broker (for edit mode)
+  const getSelectedBrokerDisplay = (): string => {
+    const currentBrokerValue = defaultValues?.broker;
+
+    console.log("currentBrokerValue ::", currentBrokerValue);
+
+    console.log("brokers ::", brokers);
+
+    if (!currentBrokerValue) {
+      return "No broker selected";
+    }
+
+    const selectedBroker = brokers.find((broker) => broker._id === currentBrokerValue);
+    if (!selectedBroker) {
+      return "Broker not found";
+    }
+
+    const displayName = selectedBroker.credentials.fy_id || selectedBroker.credentials.client_id || "Unknown";
+    return selectedBroker.is_active ? displayName : `${displayName} (Inactive)`;
+  };
 
   useEffect(() => {
     if (instruments) {
@@ -109,7 +133,12 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
     } else {
       setIsRollOverOnEnabled(false);
     }
-  }, [defaultValues]);
+
+    // Set broker value explicitly when defaultValues change
+    if (defaultValues?.broker) {
+      form.setValue("broker", defaultValues.broker);
+    }
+  }, [defaultValues, form]);
 
   const handleSubmit = (values: StrategyFormValues) => {
     if (!isEditMode && (!selectedUnderlying || !selectedExchange || !selectedExpiry)) {
@@ -122,10 +151,12 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
       return;
     }
 
-    const activeBrokers = getActiveBrokers();
-    if (activeBrokers.length === 0) {
-      setFormError("No active brokers available. Please add and activate a broker first.");
-      return;
+    if (!isEditMode) {
+      const activeBrokers = getActiveBrokers();
+      if (activeBrokers.length === 0) {
+        setFormError("No active brokers available. Please add and activate a broker first.");
+        return;
+      }
     }
 
     setFormError("");
@@ -244,25 +275,30 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
         <FormField
           control={form.control}
           name="symbol"
+          disabled={true}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Symbol</FormLabel>
               <FormControl>
-                <Input {...field} readOnly value={field.value.name} disabled={loading} />
+                <Input {...field} readOnly value={field.value.name} disabled={true} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {!isEditMode && (
-          <FormField
-            control={form.control}
-            name="broker"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Broker</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value} disabled={loading || isEditMode}>
+        <FormField
+          control={form.control}
+          name="broker"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Broker</FormLabel>
+              {isEditMode ? (
+                <FormControl>
+                  <Input {...field} value={getSelectedBrokerDisplay()} disabled={true} readOnly />
+                </FormControl>
+              ) : (
+                <Select onValueChange={field.onChange} value={field.value} disabled={loading}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select broker" />
@@ -282,11 +318,11 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
                     )}
                   </SelectContent>
                 </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormItem>
           <FormLabel>Roll Over On</FormLabel>

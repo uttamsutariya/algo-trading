@@ -69,7 +69,8 @@ export function StrategyTable() {
 
   const rolloverMutation = useMutation({
     mutationFn: (id: string) => strategyApi.rolloverStrategy(id),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       queryClient.invalidateQueries({ queryKey: ["strategies"] });
       toast.success("Strategy rollover initiated successfully");
       setRolloverConfirmOpen(false);
@@ -161,10 +162,11 @@ export function StrategyTable() {
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
+            <TableHead>Symbol</TableHead>
             <TableHead>Broker</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Roll Over On</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead align="center">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -172,6 +174,7 @@ export function StrategyTable() {
             <TableRow key={strategy._id}>
               <TableCell className="font-medium">{strategy.name}</TableCell>
               <TableCell>{strategy.description}</TableCell>
+              <TableCell>{strategy.symbol.brokerSymbols.fyers}</TableCell>
               <TableCell>
                 {strategy.broker?.credentials?.fy_id || strategy.broker?.credentials?.client_id || "N/A"}
               </TableCell>
@@ -185,7 +188,7 @@ export function StrategyTable() {
               <TableCell>
                 {strategy.rollOverOn ? format(new Date(strategy.rollOverOn), "MMM dd, yyyy") : "N/A"}
               </TableCell>
-              <TableCell>
+              <TableCell align="center">
                 <div className="flex gap-2">
                   <Button variant="ghost" size="icon" onClick={() => setEditingStrategy(strategy)}>
                     <Edit2 className="h-4 w-4" />

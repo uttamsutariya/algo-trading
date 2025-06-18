@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStrategyStore } from "@/store/useStrategyStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,8 @@ import { Search, Plus, Settings, Link2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { toast } from "sonner";
+import { brokerApi } from "@/lib/api/broker";
+import { useBrokerStore } from "@/store/useBrokerStore";
 
 export default function DashboardPage() {
   const { data: session } = useSession({
@@ -24,6 +26,20 @@ export default function DashboardPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBrokerSheetOpen, setIsBrokerSheetOpen] = useState(false);
   const { setSearchQuery, setStatusFilter, statusFilter } = useStrategyStore();
+  const { setBrokers } = useBrokerStore();
+
+  const fetchBrokers = async () => {
+    try {
+      const response = await brokerApi.getBrokers();
+      setBrokers(response.brokers);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchBrokers();
+  }, []);
 
   const handleCopyWebhookUrl = () => {
     const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL;

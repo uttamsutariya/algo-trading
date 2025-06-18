@@ -51,7 +51,7 @@ export class RolloverQueueManager extends BaseQueueManager {
     if (!openPositions.length) {
       console.log(`No open positions found for strategy ${strategy.name}`);
       await job.updateProgress(100);
-      return;
+      // return;
     }
 
     // Step 2: Find the next contract
