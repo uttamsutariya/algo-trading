@@ -26,13 +26,19 @@ interface StrategyFormProps {
 }
 
 export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, isEditMode = false }: StrategyFormProps) {
+  const getTomorrowDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  };
+
   const form = useForm<StrategyFormValues>({
     resolver: zodResolver(strategyFormSchema),
     defaultValues: {
       name: defaultValues?.name || "",
       description: defaultValues?.description || "",
       symbol: defaultValues?.symbol || { name: "", _id: "" },
-      rollOverOn: defaultValues?.rollOverOn || new Date(),
+      rollOverOn: defaultValues?.rollOverOn || getTomorrowDate(),
       broker: defaultValues?.broker || ""
     }
   });
@@ -257,7 +263,7 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
           render={({ field }) => (
             <FormItem>
               <FormLabel>Broker</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value} disabled={loading}>
+              <Select onValueChange={field.onChange} value={field.value} disabled={loading || isEditMode}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select broker" />
@@ -312,9 +318,20 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
                   selected={form.watch("rollOverOn")}
                   onSelect={(date: Date | undefined) => {
                     console.log("date ::", date);
-                    if (isRollOverOnEnabled) {
-                      form.setValue("rollOverOn", date, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+                    if (isRollOverOnEnabled && date) {
+                      // Use the selected date as-is since we only extract date portion
+                      form.setValue("rollOverOn", date, {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                        shouldValidate: true
+                      });
                     }
+                  }}
+                  disabled={(date) => {
+                    // Disable today and all past dates
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return date <= today;
                   }}
                   initialFocus
                 />

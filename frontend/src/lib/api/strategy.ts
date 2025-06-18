@@ -17,7 +17,12 @@ export const strategyApi = {
         description: strategyData.description,
         symbol: strategyData.symbol._id,
         broker: strategyData.broker,
-        rollOverOn: strategyData.rollOverOn ? strategyData.rollOverOn.toISOString().split("T")[0] : undefined
+        rollOverOn: strategyData.rollOverOn
+          ? `${strategyData.rollOverOn.getFullYear()}-${String(strategyData.rollOverOn.getMonth() + 1).padStart(
+              2,
+              "0"
+            )}-${String(strategyData.rollOverOn.getDate()).padStart(2, "0")}`
+          : undefined
       };
       const response = await axiosClient.post("/strategies/create", payload);
       return response.data;
@@ -54,7 +59,12 @@ export const strategyApi = {
         description: strategyData?.description,
         symbol: strategyData?.symbol?._id,
         broker: strategyData?.broker,
-        rollOverOn: strategyData?.rollOverOn ? strategyData?.rollOverOn?.toISOString().split("T")[0] : undefined,
+        rollOverOn: strategyData?.rollOverOn
+          ? `${strategyData.rollOverOn.getFullYear()}-${String(strategyData.rollOverOn.getMonth() + 1).padStart(
+              2,
+              "0"
+            )}-${String(strategyData.rollOverOn.getDate()).padStart(2, "0")}`
+          : undefined,
         status: strategyData?.status
       };
       const response = await axiosClient.put(`/strategies/update/${id}`, payload);
