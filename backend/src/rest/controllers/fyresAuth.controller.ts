@@ -4,11 +4,12 @@ import axios from "axios";
 import BrokerModel from "../../models/broker.model";
 import { generateAppIdHash, getBrokerCredentials } from "../../utils/helperFunction";
 import { FyersCredentials } from "../../models/broker.model";
+import brokerConfig from "../../config/broker.config";
 
 require("dotenv").config();
 
 const redirect_url = process.env.FYERS_REDIRECT_URL!;
-const FYERS_BASE_URL = "https://api-t1.fyers.in/api/v3";
+const FYERS_BASE_URL = brokerConfig.fyers.apiBaseUrl;
 
 export const fyersLogin = async (req: Request, res: Response) => {
   try {

@@ -1,6 +1,7 @@
 import { BaseBroker } from "./BaseBroker";
 import { OrderRequest, OrderResponse } from "../types/broker.types";
 import axios, { AxiosInstance } from "axios";
+import brokerConfig from "../config/broker.config";
 
 interface FyersOrderResponse {
   s: string; // Status: "ok" for success, "error" for failure
@@ -26,7 +27,7 @@ interface FyersProfileResponse {
 }
 
 export class FyersBroker extends BaseBroker {
-  private readonly baseUrl = "https://api-t1.fyers.in/api/v3";
+  private readonly baseUrl = brokerConfig.fyers.apiBaseUrl;
 
   // appId is the client_id that we store in the database
   private readonly appId: string;
@@ -130,6 +131,19 @@ export class FyersBroker extends BaseBroker {
         error: error instanceof Error ? error.message : "Unknown error"
       };
     }
+  }
+
+  public async getNewToken(refresh_token: string): Promise<string> {
+    const response = await this.axiosInstance.post("/token", {
+      grant_type: "refresh_token",
+      refresh_token
+    });
+    if (!response.data.access_token) {
+      console.error(`Failed to refresh token for appId: ${this.appId}`);
+      throw new Error(`Failed to refresh token for appId: ${this.appId}`);
+    }
+
+    return response.data.access_token;
   }
 
   private mapToFyersRequest(request: OrderRequest): Record<string, any> {

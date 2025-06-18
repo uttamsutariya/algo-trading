@@ -2,6 +2,7 @@ import cron from "node-cron";
 import axios from "axios";
 import BrokerModel from "../models/broker.model";
 import { FyersCredentials } from "../models/broker.model";
+import { FyersBroker } from "../brokersApi/FyersBroker";
 
 // Function to refresh access token
 
@@ -36,23 +37,14 @@ const refreshAccessToken = async () => {
 
       try {
         //Call Fyers API to refresh token ONLY IF within 15 days
-        const tokenResponse = await axios.post(
-          "https://api.fyers.in/api/v2/token",
-          { grant_type: "refresh_token", refresh_token },
-          { headers: { "Content-Type": "application/json" } }
-        );
-
-        if (!tokenResponse.data.access_token) {
-          console.error(`Failed to refresh token for ${fy_id}`);
-          continue;
-        }
-
-        const { access_token } = tokenResponse.data;
+        const brokerInstance = new FyersBroker(fyersCredentials.client_id, fyersCredentials.access_token);
+        const accessToken = await brokerInstance.getNewToken(refresh_token);
+        console.log("accessToken ::", accessToken);
 
         //Update access token and reset token issued timestamp in DB
         broker.credentials = {
           ...fyersCredentials,
-          access_token
+          access_token: accessToken
         };
         broker.is_active = true;
         broker.token_issued_at = new Date(); // Set new issue time
