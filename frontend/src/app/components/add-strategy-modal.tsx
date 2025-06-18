@@ -30,7 +30,6 @@ export function AddStrategyModal({ open, onOpenChange }: AddStrategyModalProps) 
       onOpenChange(false);
     },
     onError: (error: any) => {
-      console.log("error ::", error);
       toast.error("Failed to create strategy", {
         description: error.message
       });

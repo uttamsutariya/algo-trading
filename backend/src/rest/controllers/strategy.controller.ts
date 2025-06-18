@@ -28,12 +28,9 @@ export const createStrategy = async (req: Request, res: Response) => {
     // Create and save the strategy
     const newStrategy = new Strategy(validatedData);
     const savedStrategy = await newStrategy.save();
-    console.log(savedStrategy, "save strategy");
 
     // Schedule the rollover job using RolloverQueueManager
     if (savedStrategy.rollOverOn) {
-      console.log("schedule rollover job");
-
       // rollOverOn is in IST — convert to UTC for delay calculation
       const istTimestamp = new Date(savedStrategy.rollOverOn).getTime();
       const utcTimestamp = istTimestamp - 5.5 * 60 * 60 * 1000; // IST - UTC offset
@@ -44,7 +41,6 @@ export const createStrategy = async (req: Request, res: Response) => {
         { strategy: savedStrategy.toObject() },
         { delay } // Delay job until rollOverOn date
       );
-      console.log("Rollover job added to queue");
     }
     // Populate the instrument details before sending response
     const populatedStrategy = await savedStrategy.populate("symbol");

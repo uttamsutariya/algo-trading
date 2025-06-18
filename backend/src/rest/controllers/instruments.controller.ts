@@ -32,7 +32,6 @@ export const viewAllInstruments = async (req: Request, res: Response) => {
 // Add new controller to manually trigger instruments update
 export const updateInstruments = async (req: Request, res: Response) => {
   try {
-    console.log("Manual instruments update triggered");
     await triggerManualUpdate();
     return res.status(200).json({ message: "Instruments update triggered successfully" });
   } catch (error) {

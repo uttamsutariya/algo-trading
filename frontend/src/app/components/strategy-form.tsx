@@ -138,8 +138,6 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
     onSubmit(submissionValues);
   };
 
-  console.log("form.getValues(rollOverOn) ::", form.getValues("rollOverOn"));
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -317,7 +315,6 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
                   mode="single"
                   selected={form.watch("rollOverOn")}
                   onSelect={(date: Date | undefined) => {
-                    console.log("date ::", date);
                     if (isRollOverOnEnabled && date) {
                       // Use the selected date as-is since we only extract date portion
                       form.setValue("rollOverOn", date, {

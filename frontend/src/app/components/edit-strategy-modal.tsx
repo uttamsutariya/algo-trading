@@ -14,8 +14,6 @@ interface EditStrategyModalProps {
 }
 
 export function EditStrategyModal({ strategy, open, onOpenChange }: EditStrategyModalProps) {
-  // console.log("strategy ::", strategy);
-
   const { data: instruments, isLoading, isError } = useInstruments();
 
   const queryClient = useQueryClient();
@@ -29,7 +27,6 @@ export function EditStrategyModal({ strategy, open, onOpenChange }: EditStrategy
       onOpenChange(false);
     },
     onError: (error: any) => {
-      console.log("error ::", error);
       toast.error("Failed to update strategy", {
         description: error.message
       });
@@ -59,7 +56,7 @@ export function EditStrategyModal({ strategy, open, onOpenChange }: EditStrategy
       underlying: strategy.symbol.underlying,
       exchange: strategy.symbol.exchange
     },
-    broker: strategy.broker,
+    broker: strategy.broker._id,
     rollOverOn: strategy.rollOverOn ? new Date(strategy.rollOverOn) : undefined
   };
 
