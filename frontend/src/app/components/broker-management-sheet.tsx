@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { brokerApi, Broker } from "@/lib/api/broker";
+import { brokerApi } from "@/lib/api/broker";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Plus, LogIn } from "lucide-react";
 import { AddBrokerModal } from "./add-broker-modal";
 import { toast } from "sonner";
+import { useBrokerStore } from "@/store/useBrokerStore";
 
 interface BrokerManagementSheetProps {
   open: boolean;
@@ -14,10 +15,18 @@ interface BrokerManagementSheetProps {
 }
 
 export function BrokerManagementSheet({ open, onOpenChange }: BrokerManagementSheetProps) {
-  const [brokers, setBrokers] = useState<Broker[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { brokers, loading, error, setBrokers, setLoading, setError } = useBrokerStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  const isTokenExpired = (tokenIssuedAt?: string): boolean => {
+    if (!tokenIssuedAt) return true;
+
+    const tokenDate = new Date(tokenIssuedAt);
+    const now = new Date();
+    const daysDifference = Math.floor((now.getTime() - tokenDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    return daysDifference > 10;
+  };
 
   const fetchBrokers = async () => {
     try {
@@ -88,7 +97,7 @@ export function BrokerManagementSheet({ open, onOpenChange }: BrokerManagementSh
                         <Badge variant={broker.is_active ? "default" : "secondary"}>
                           {broker.is_active ? "Active" : "Inactive"}
                         </Badge>
-                        {!broker.is_active && (
+                        {(!broker.is_active || (broker.is_active && isTokenExpired(broker.token_issued_at))) && (
                           <Button variant="outline" size="sm" onClick={() => handleLogin(broker._id)} className="h-8">
                             <LogIn className="h-4 w-4 mr-1" />
                             Login

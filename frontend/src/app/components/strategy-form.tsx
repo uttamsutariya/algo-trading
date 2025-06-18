@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
 import { useInstruments } from "@/hooks/useInstruments";
 import { Instrument } from "@/hooks/useInstruments";
+import { useBrokerStore } from "@/store/useBrokerStore";
 
 import { strategyFormSchema, type StrategyFormValues } from "./strategy-form-schema";
 
@@ -32,11 +33,12 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
       description: defaultValues?.description || "",
       symbol: defaultValues?.symbol || { name: "", _id: "" },
       rollOverOn: defaultValues?.rollOverOn || new Date(),
-      broker: defaultValues?.broker || "fyers"
+      broker: defaultValues?.broker || ""
     }
   });
 
   const { data: instruments } = useInstruments();
+  const { getActiveBrokers } = useBrokerStore();
   const [underlyingOptions, setUnderlyingOptions] = useState<string[]>([]);
   const [exchangeOptions, setExchangeOptions] = useState<string[]>(["NSE"]);
   const [symbolTypeOptions, setSymbolTypeOptions] = useState<string[]>(["future"]);
@@ -108,6 +110,18 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
       setFormError("Please select an underlying, exchange, and expiry.");
       return;
     }
+
+    if (!values.broker || values.broker === "no-brokers") {
+      setFormError("Please select a broker.");
+      return;
+    }
+
+    const activeBrokers = getActiveBrokers();
+    if (activeBrokers.length === 0) {
+      setFormError("No active brokers available. Please add and activate a broker first.");
+      return;
+    }
+
     setFormError("");
 
     const submissionValues = {
@@ -243,16 +257,27 @@ export function StrategyForm({ defaultValues, onSubmit, submitLabel, loading, is
           render={({ field }) => (
             <FormItem>
               <FormLabel>Broker</FormLabel>
-              <Select defaultValue="fyers" disabled>
+              <Select onValueChange={field.onChange} value={field.value} disabled={loading}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select broker" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="fyers">Fyers</SelectItem>
+                  {getActiveBrokers().length === 0 ? (
+                    <SelectItem value="no-brokers" disabled>
+                      No active brokers available
+                    </SelectItem>
+                  ) : (
+                    getActiveBrokers().map((broker) => (
+                      <SelectItem key={broker._id} value={broker._id}>
+                        {broker.credentials.fy_id || broker.credentials.client_id}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              <FormMessage />
             </FormItem>
           )}
         />

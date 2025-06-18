@@ -111,7 +111,6 @@ export const validateCreateStrategy = async (data: IStrategyInput): Promise<Vali
   validatedData.rollOverOn = data.rollOverOn || null;
 
   // Validate broker
-
   if (!data.broker || !mongoose.Types.ObjectId.isValid(data.broker)) {
     return {
       isValid: false,

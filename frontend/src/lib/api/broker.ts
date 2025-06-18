@@ -9,6 +9,7 @@ export interface Broker {
     secret_key: string;
     fy_id?: string;
   };
+  token_issued_at?: string;
   createdAt: string;
   updatedAt: string;
 }

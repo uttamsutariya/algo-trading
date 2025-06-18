@@ -121,6 +121,7 @@ export function StrategyTable() {
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
+            <TableHead>Broker</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Roll Over On</TableHead>
             <TableHead>Actions</TableHead>
@@ -131,6 +132,9 @@ export function StrategyTable() {
             <TableRow key={strategy._id}>
               <TableCell className="font-medium">{strategy.name}</TableCell>
               <TableCell>{strategy.description}</TableCell>
+              <TableCell>
+                {strategy.broker?.credentials?.fy_id || strategy.broker?.credentials?.client_id || "N/A"}
+              </TableCell>
               <TableCell>
                 <Switch
                   checked={strategy.status === "running"}

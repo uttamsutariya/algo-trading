@@ -1,3 +1,5 @@
+import { Broker } from "@/lib/api/broker";
+
 export enum SymbolType {
   FUTURE = "Future",
   OPTION = "Option"
@@ -25,5 +27,5 @@ export interface Strategy {
   rollOverOn: Date | null;
   createdAt: string;
   updatedAt: string;
-  broker: string;
+  broker: Broker;
 }

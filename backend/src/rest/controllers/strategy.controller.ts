@@ -100,7 +100,7 @@ export const updateStrategy = async (req: Request, res: Response) => {
 export const viewAllStrategies = async (req: Request, res: Response) => {
   try {
     // Fetch all strategies and populate instrument details
-    const strategies = await Strategy.find().populate("symbol");
+    const strategies = await Strategy.find().populate("symbol").populate("broker");
 
     // Respond with the list of strategies
     return res.status(200).json(strategies);
