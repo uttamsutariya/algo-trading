@@ -36,23 +36,20 @@ const refreshAccessToken = async () => {
       }
 
       try {
-        //Call Fyers API to refresh token ONLY IF within 15 days
-        const brokerInstance = new FyersBroker(fyersCredentials.client_id, fyersCredentials.access_token);
-        const accessToken = await brokerInstance.getNewToken(refresh_token);
+        // Use the new FyersBroker initialization pattern with broker _id
+        const brokerInstance = await FyersBroker.create((broker._id as string).toString());
+        const accessToken = await brokerInstance.getNewToken();
         console.log("accessToken ::", accessToken);
 
-        //Update access token and reset token issued timestamp in DB
-        broker.credentials = {
-          ...fyersCredentials,
-          access_token: accessToken
-        };
-        broker.is_active = true;
-        broker.token_issued_at = new Date(); // Set new issue time
-        await broker.save();
-
+        // Note: The getNewToken method now automatically updates the database,
+        // so we don't need to manually update broker.credentials here
         console.log(`Access token refreshed successfully for ${fy_id}`);
       } catch (error) {
         console.error(`Failed to refresh token for ${fy_id}:`, error);
+
+        // If token refresh fails, mark broker as inactive
+        broker.is_active = false;
+        await broker.save();
       }
     }
   } catch (error) {

@@ -24,8 +24,13 @@ export async function getBrokerInstance(strategyId: string): Promise<FyersBroker
       return null;
     }
 
-    const fyersCredentials = brokerDoc.credentials as FyersCredentials;
-    return new FyersBroker(fyersCredentials.client_id, fyersCredentials.access_token);
+    if (!brokerDoc.is_active) {
+      console.error(`Broker with ID ${strategy.broker} is not active.`);
+      return null;
+    }
+
+    // Use the new FyersBroker initialization pattern
+    return await FyersBroker.create((brokerDoc._id as string).toString());
   } catch (error) {
     console.error("Error creating broker instance:", error);
     return null;
