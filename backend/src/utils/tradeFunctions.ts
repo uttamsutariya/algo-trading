@@ -1,15 +1,13 @@
-import { mongo } from "mongoose";
-import { FyersBroker } from "../brokersApi/FyersBroker";
+import { OredrBook } from "../brokersApi/FyersBroker";
 import Instrument from "../models/instruments.model";
 import Strategy from "../models/strategy.model";
 import mongoose from "mongoose";
-import BrokerModel, { FyersCredentials } from "../models/broker.model";
 import { getBrokerInstance } from "./broker";
 
 /**
  * Fetch open positions for a given strategy's symbol
  */
-export async function getOpenOrders(strategyId: string) {
+export async function getOpenOrders(strategyId: string): Promise<OredrBook[]> {
   try {
     // 1. Find the strategy
     const strategy = await Strategy.findById(strategyId);
@@ -31,37 +29,25 @@ export async function getOpenOrders(strategyId: string) {
     }
 
     const fyresSymbol = symbolObject.brokerSymbols.fyers;
-    const brokerId = strategy.broker;
-    const brokerDoc = await BrokerModel.findById(brokerId);
 
-    if (!brokerDoc) {
-      console.error(`Broker with ID ${brokerId} not found.`);
+    const broker = await getBrokerInstance(strategyId);
+    if (!broker) {
+      console.error(`
+        Broker not found \n
+        Strategy ID: ${strategyId} \n
+        Strategy Name: ${strategy.name} \n
+      `);
       return [];
     }
-
-    const fyersCredentials = brokerDoc.credentials as FyersCredentials;
-    const accessToken = fyersCredentials.access_token;
-    const appId = fyersCredentials.client_id;
-    const broker = new FyersBroker(appId, accessToken);
 
     // 3. Fetch all open orders from the external order book API
-    const response = await broker.getOrderBook(); // Replace with actual API
-    if (response.s !== "ok") {
-      console.error("Error fetching order book:", response.message);
-      return [];
-    }
-
-    const openPositions = response.orderBook; // Extract order book from API response
+    const openPositions = await broker.getOrderBook(); // Replace with actual API
 
     // 4. Filter open positions based on brokerSymbols.fyres match
-    const filteredPositions = openPositions?.filter((position: any) => {
+    const filteredPositions = openPositions?.filter((position: OredrBook) => {
       if (!position.symbol) return false;
-
-      // Compare `orderBook[].symbol` with `brokerSymbols.fyres`
       return position.symbol === fyresSymbol;
     });
-
-    console.log(`Filtered ${filteredPositions.length} positions matching brokerSymbols.fyres: ${fyresSymbol}`);
 
     return filteredPositions;
   } catch (error) {
@@ -103,9 +89,7 @@ export async function closeAllPositions(openPositions: any[], strategyId: string
     const closeResponse = await broker.placeOrder({
       symbol: position.symbol,
       qty: position.qty,
-      side: closeSide,
-      productType: "MARGIN",
-      orderTag: "rollover_close"
+      side: closeSide
     });
 
     if (!closeResponse.success) {
@@ -192,9 +176,7 @@ export async function openNewPositions(
     const openResponse = await broker.placeOrder({
       symbol: fyresSymbol,
       qty: position.qty,
-      side: position.side,
-      productType: "MARGIN",
-      orderTag: "rollover_open"
+      side: position.side
     });
 
     if (!openResponse.success) {

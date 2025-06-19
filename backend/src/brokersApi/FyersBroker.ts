@@ -16,6 +16,13 @@ interface FyersOrderResponse {
   }>;
 }
 
+export interface OredrBook {
+  symbol: string;
+  status: number;
+  orderId: string;
+  qty: number;
+}
+
 interface FyersProfileResponse {
   s: string;
   code: number;
@@ -71,27 +78,22 @@ export class FyersBroker extends BaseBroker {
     }
   }
 
-  public async getOrderBook(): Promise<FyersOrderResponse> {
+  public async getOrderBook(): Promise<OredrBook[]> {
     try {
       const response = await this.axiosInstance.get<FyersOrderResponse>("/orders");
 
       if (response.data.s === "ok") {
-        return response.data;
+        return response.data.orderBook || [];
       } else {
         console.error("Error fetching orders:", response.data.message);
-        return {
-          s: "error",
-          code: response.data.code || 400,
-          message: response.data.message,
-          orderBook: []
-        };
+        return [];
       }
     } catch (error) {
-      console.error("Error fetching orders from Fyers:", error);
+      console.error("Error fetching order book from Fyers:", error);
       if (axios.isAxiosError(error)) {
-        throw new Error(`Failed to fetch orders: ${error.response?.data?.message || error.message}`);
+        throw new Error(`Failed to fetch order book: ${error.response?.data?.message || error.message}`);
       }
-      throw new Error("Failed to fetch orders from Fyers API");
+      throw new Error("Failed to fetch order book from Fyers API");
     }
   }
 
@@ -152,15 +154,14 @@ export class FyersBroker extends BaseBroker {
       qty: request.qty,
       type: 2, // Market order
       side: request.side === "buy" ? 1 : -1,
-      productType: request.productType || "INTRADAY",
-      limitPrice: request.limitPrice || 0,
-      stopPrice: request.stopPrice || 0,
+      productType: "MARGIN",
+      limitPrice: 0,
+      stopPrice: 0,
       validity: request.validity || "DAY",
       disclosedQty: 0,
       offlineOrder: false,
       stopLoss: 0,
-      takeProfit: 0,
-      orderTag: request.orderTag || "algo_trade"
+      takeProfit: 0
     };
   }
 }

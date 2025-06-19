@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import Strategy from "../../models/strategy.model";
 import { TradeQueueManager } from "../../queue/TradeQueueManager";
-import { TradeJobData } from "../../types/queue.types";
 
 interface WebhookRequest {
   strategyId: string;
@@ -70,11 +69,14 @@ const validateWebhookRequest = async (
 
 export const handleWebhook = async (req: Request, res: Response) => {
   try {
+    console.log("Webhook received ::", req.body);
     const { isValid, error, validatedData } = await validateWebhookRequest(req.body);
 
     if (!isValid || !validatedData) {
       return res.status(400).json({ error });
     }
+
+    console.log("Validated data ::", validatedData);
 
     // Get the trade queue manager instance
     const tradeQueueManager = TradeQueueManager.getInstance();
@@ -85,6 +87,8 @@ export const handleWebhook = async (req: Request, res: Response) => {
       qty: validatedData.qty,
       side: validatedData.side
     });
+
+    console.log("Job added to queue ::", job);
 
     return res.status(200).json({
       message: "Trade job added to queue",

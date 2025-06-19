@@ -42,42 +42,29 @@ export class RolloverQueueManager extends BaseQueueManager {
 
     console.log(`Executing rollover job for strategy: ${strategy.name}`);
 
-    await Strategy.findByIdAndUpdate(strategy._id, {
-      rollOverOn: null
-    });
+    const nextSymbol = await findNextContract(new Types.ObjectId(strategy.symbol));
+    if (!nextSymbol.nextSymbol) {
+      throw new Error(`No next contract found for strategy ${strategy.name}, Symbol: ${strategy.symbol}`);
+    }
 
-    // Step 1: Fetch open positions
     const openPositions = await getOpenOrders(strategy._id);
     if (!openPositions.length) {
       console.log(`No open positions found for strategy ${strategy.name}`);
       await job.updateProgress(100);
-      // return;
+      return;
     }
 
-    // Step 2: Find the next contract
-    const nextSymbol = await findNextContract(new Types.ObjectId(strategy.symbol));
-    if (!nextSymbol.nextSymbol) {
-      throw new Error(`No next contract found for strategy ${strategy.name}`);
-    }
-
-    // Step 3: Update strategy with new symbol
-    if (nextSymbol.nextSymbol) {
-      const updatedStrategy = await updateStrategySymbol(strategy._id, nextSymbol.nextSymbol);
-      console.log(`Strategy ${strategy.name} updated with new symbol ID: ${updatedStrategy.symbol}`);
-    } else {
-      throw new Error(`No valid next contract found for strategy ${strategy.name}`);
-    }
-
-    // Step 4: Close positions
     await closeAllPositions(openPositions, strategy._id);
 
-    // Step 5: Reopen positions with new contract
-    if (nextSymbol.nextSymbol) {
-      await openNewPositions(openPositions, nextSymbol.nextSymbol, strategy._id);
-      console.log(`Rollover completed successfully for strategy: ${strategy.name}`);
-    } else {
-      throw new Error(`No valid next contract found. Skipping position re-opening for strategy: ${strategy.name}`);
-    }
+    await openNewPositions(openPositions, nextSymbol.nextSymbol, strategy._id);
+    console.log(`Rollover completed successfully for strategy: ${strategy.name}`);
+
+    const updatedStrategy = await updateStrategySymbol(strategy._id, nextSymbol.nextSymbol);
+    console.log(`Strategy ${strategy.name} updated with new symbol ID: ${updatedStrategy.symbol}`);
+
+    await Strategy.findByIdAndUpdate(strategy._id, {
+      rollOverOn: null
+    });
 
     await job.updateProgress(100);
   }

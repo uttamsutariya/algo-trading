@@ -2,11 +2,9 @@ export interface OrderRequest {
   symbol: string;
   qty: number;
   side: "buy" | "sell";
-  productType: string;
   limitPrice?: number;
   stopPrice?: number;
   validity?: string;
-  orderTag?: string;
 }
 
 export interface OrderResponse {
