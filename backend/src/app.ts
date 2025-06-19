@@ -3,14 +3,14 @@ dotenv.config();
 
 import express, { Express, Request, Response } from "express";
 import cors from "cors";
-import { handleWebhook } from "./rest/controllers/webhook.controller";
-import strategyRoutes from "./rest/routes/strategy.routes";
-import instrumentsRoutes from "./rest/routes/instruments.routes";
-import authRoutes from "./rest/routes/auth";
-import fyresAuthRoutes from "./rest/routes/fyres.routes";
-import brokerRoutes from "./rest/routes/broker.routes";
+import { handleWebhook } from "./rest/controllers/webhook.controller.js";
+import strategyRoutes from "./rest/routes/strategy.routes.js";
+import instrumentsRoutes from "./rest/routes/instruments.routes.js";
+import authRoutes from "./rest/routes/auth.js";
+import fyresAuthRoutes from "./rest/routes/fyres.routes.js";
+import brokerRoutes from "./rest/routes/broker.routes.js";
 
-import "./cron/instrumentsUpdate"; // Import the cron job to update symbols daily
+import "./cron/instrumentsUpdate.js"; // Import the cron job to update symbols daily
 
 const app: Express = express();
 

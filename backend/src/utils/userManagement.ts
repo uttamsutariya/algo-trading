@@ -3,8 +3,8 @@ dotenv.config();
 
 import bcrypt from "bcryptjs";
 import inquirer from "inquirer";
-import { User } from "../models/user.model";
-import { connectDatabase } from "../config/database";
+import { User } from "../models/user.model.js";
+import { connectDatabase } from "../config/database.js";
 
 // Utility functions
 async function hashPassword(password: string): Promise<string> {

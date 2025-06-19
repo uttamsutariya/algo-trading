@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import Instrument from "../../models/instruments.model";
-import { triggerManualUpdate } from "../../cron/instrumentsUpdate";
+import Instrument from "../../models/instruments.model.js";
+import { triggerManualUpdate } from "../../cron/instrumentsUpdate.js";
 
 //view all instruments
 

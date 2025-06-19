@@ -1,6 +1,6 @@
 import { Queue, Worker, Job, QueueOptions, WorkerOptions } from "bullmq";
 import { EventEmitter } from "events";
-import { defaultQueueOptions, defaultWorkerOptions } from "./config/queue.config";
+import { defaultQueueOptions, defaultWorkerOptions } from "./config/queue.config.js";
 
 type JobCounts = {
   waiting: number;

@@ -1,5 +1,5 @@
 import { QueueOptions, WorkerOptions } from "bullmq";
-import redisConfig from "../../config/redis.config";
+import redisConfig from "../../config/redis.config.js";
 
 // Common queue options
 export const defaultQueueOptions: QueueOptions = {

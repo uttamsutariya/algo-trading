@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "user-management": "ts-node-dev --respawn --transpile-only src/utils/userManagement.ts",
+    "dev": "tsx watch src/index.ts",
+    "user-management": "tsx watch src/utils/userManagement.ts",
     "build": "tsc",
-    "start": "node dist/app.js"
+    "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "description": "",
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -30,6 +30,7 @@
     "lodash": "^4.17.21",
     "mongoose": "^8.9.5",
     "node-cron": "^3.0.3",
+    "tsx": "^4.20.3",
     "uuid": "^11.0.5",
     "zod": "^3.24.1"
   },
@@ -43,8 +44,6 @@
     "@typescript-eslint/eslint-plugin": "^8.20.0",
     "@typescript-eslint/parser": "^8.20.0",
     "install": "^0.13.0",
-    "npm": "^11.0.0",
-    "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.3"
   }
 }

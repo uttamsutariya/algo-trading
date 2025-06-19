@@ -1,4 +1,4 @@
-import { OrderRequest, OrderResponse } from "../types/broker.types";
+import { OrderRequest, OrderResponse } from "../types/broker.types.js";
 
 export abstract class BaseBroker {
   abstract placeOrder(request: OrderRequest): Promise<OrderResponse>;

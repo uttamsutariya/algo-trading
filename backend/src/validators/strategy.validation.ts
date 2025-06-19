@@ -1,9 +1,9 @@
-import { StrategyStatus, BrokersAvailable } from "../types/enums";
-import { IStrategyInput } from "../rest/controllers/strategy.controller";
+import { StrategyStatus, BrokersAvailable } from "../types/enums.js";
+import { IStrategyInput } from "../rest/controllers/strategy.controller.js";
 import mongoose from "mongoose";
-import Instrument from "../models/instruments.model";
-import Strategy from "../models/strategy.model";
-import BrokerModel from "../models/broker.model";
+import Instrument from "../models/instruments.model.js";
+import Strategy from "../models/strategy.model.js";
+import BrokerModel from "../models/broker.model.js";
 
 type ValidationResult = {
   isValid: boolean;

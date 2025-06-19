@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 
-import BrokerModel, { FyersCredentials, IBroker } from "../../models/broker.model";
+import BrokerModel, { FyersCredentials, IBroker } from "../../models/broker.model.js";
 
 // add brokers
 

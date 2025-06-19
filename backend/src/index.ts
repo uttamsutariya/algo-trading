@@ -1,7 +1,7 @@
-import app from "./app";
-import { connectDatabase } from "./config/database";
-import { TradeQueueManager } from "./queue/TradeQueueManager";
-import { RolloverQueueManager } from "./queue/RolloverQueueManager";
+import app from "./app.js";
+import { connectDatabase } from "./config/database.js";
+import { TradeQueueManager } from "./queue/TradeQueueManager.js";
+import { RolloverQueueManager } from "./queue/RolloverQueueManager.js";
 
 const port = process.env.PORT || 3200;
 

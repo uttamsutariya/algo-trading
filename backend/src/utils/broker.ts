@@ -1,6 +1,6 @@
-import { FyersBroker } from "../brokersApi/FyersBroker";
-import BrokerModel, { FyersCredentials } from "../models/broker.model";
-import Strategy from "../models/strategy.model";
+import { FyersBroker } from "../brokersApi/FyersBroker.js";
+import BrokerModel, { FyersCredentials } from "../models/broker.model.js";
+import Strategy from "../models/strategy.model.js";
 
 /**
  * Factory function to create a broker instance based on strategy ID

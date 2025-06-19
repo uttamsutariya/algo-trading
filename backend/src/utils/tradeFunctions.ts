@@ -1,8 +1,8 @@
-import { OredrBook } from "../brokersApi/FyersBroker";
-import Instrument from "../models/instruments.model";
-import Strategy from "../models/strategy.model";
+import { OredrBook } from "../brokersApi/FyersBroker.js";
+import Instrument from "../models/instruments.model.js";
+import Strategy from "../models/strategy.model.js";
 import mongoose from "mongoose";
-import { getBrokerInstance } from "./broker";
+import { getBrokerInstance } from "./broker.js";
 
 /**
  * Fetch open positions for a given strategy's symbol

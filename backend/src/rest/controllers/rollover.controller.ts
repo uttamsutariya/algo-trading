@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import Strategy from "../../models/strategy.model";
-import { RolloverQueueManager } from "../../queue/RolloverQueueManager";
+import Strategy from "../../models/strategy.model.js";
+import { RolloverQueueManager } from "../../queue/RolloverQueueManager.js";
 
 export const rollover = async (req: Request, res: Response) => {
   try {

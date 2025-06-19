@@ -5,8 +5,8 @@ import {
   viewAllStrategies,
   viewStrategy,
   deleteStrategy
-} from "../controllers/strategy.controller";
-import { rollover } from "../controllers/rollover.controller";
+} from "../controllers/strategy.controller.js";
+import { rollover } from "../controllers/rollover.controller.js";
 
 const router = Router();
 

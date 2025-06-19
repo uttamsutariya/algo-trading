@@ -1,6 +1,6 @@
 import { Job } from "bullmq";
-import { BaseQueueManager } from "./BaseQueueManager";
-import { queueConfigs } from "./config/queue.config";
+import { BaseQueueManager } from "./BaseQueueManager.js";
+import { queueConfigs } from "./config/queue.config.js";
 import { Types } from "mongoose";
 import {
   getOpenOrders,
@@ -8,8 +8,8 @@ import {
   findNextContract,
   openNewPositions,
   updateStrategySymbol
-} from "../utils/tradeFunctions";
-import Strategy from "../models/strategy.model";
+} from "../utils/tradeFunctions.js";
+import Strategy from "../models/strategy.model.js";
 
 export interface RolloverJobData {
   strategy: {

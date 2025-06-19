@@ -1,5 +1,5 @@
-import { FyersBroker } from "../brokersApi/FyersBroker";
-import { connectDatabase } from "../config/database";
+import { FyersBroker } from "../brokersApi/FyersBroker.js";
+import { connectDatabase } from "../config/database.js";
 
 // _id of the broker in the database
 const BROKER_ID = "684e6fb98b569a1a0d413c53";

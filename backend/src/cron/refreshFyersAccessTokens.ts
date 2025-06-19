@@ -1,8 +1,7 @@
 import cron from "node-cron";
-import axios from "axios";
-import BrokerModel from "../models/broker.model";
-import { FyersCredentials } from "../models/broker.model";
-import { FyersBroker } from "../brokersApi/FyersBroker";
+import BrokerModel from "../models/broker.model.js";
+import { FyersCredentials } from "../models/broker.model.js";
+import { FyersBroker } from "../brokersApi/FyersBroker.js";
 
 // Function to refresh access token
 

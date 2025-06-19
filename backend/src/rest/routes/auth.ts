@@ -2,7 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { User } from "../../models/user.model";
+import { User } from "../../models/user.model.js";
 
 const router = express.Router();
 

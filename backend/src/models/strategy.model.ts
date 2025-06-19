@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { BrokersAvailable, StrategyStatus } from "../types/enums";
+import { BrokersAvailable, StrategyStatus } from "../types/enums.js";
 
 const strategySchema = new Schema(
   {

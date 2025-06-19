@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { SymbolType } from "../types/enums";
+import { SymbolType } from "../types/enums.js";
 
 const instrumentSchema = new Schema(
   {

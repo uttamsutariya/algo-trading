@@ -1,9 +1,9 @@
-import Strategy from "../../models/strategy.model";
-import { StrategyStatus, BrokersAvailable } from "../../types/enums";
-import { validateCreateStrategy, validateUpdateStrategy } from "../../validators/strategy.validation";
+import Strategy from "../../models/strategy.model.js";
+import { StrategyStatus, BrokersAvailable } from "../../types/enums.js";
+import { validateCreateStrategy, validateUpdateStrategy } from "../../validators/strategy.validation.js";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
-import { RolloverQueueManager } from "../../queue/RolloverQueueManager";
+import { RolloverQueueManager } from "../../queue/RolloverQueueManager.js";
 // Interface for Request Body
 export interface IStrategyInput {
   name: string;

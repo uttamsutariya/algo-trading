@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import axios from "axios";
-import Instrument from "../models/instruments.model";
+import Instrument from "../models/instruments.model.js";
 
 const FYERS = {
   NSE_CURRENT_DERIVATIVES_URL: "https://public.fyers.in/sym_details/NSE_CD_sym_master.json",

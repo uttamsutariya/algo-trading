@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { viewAllInstruments, updateInstruments } from "../controllers/instruments.controller";
+import { viewAllInstruments, updateInstruments } from "../controllers/instruments.controller.js";
 
 const router = Router();
 

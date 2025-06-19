@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import Strategy from "../../models/strategy.model";
-import { TradeQueueManager } from "../../queue/TradeQueueManager";
+import Strategy from "../../models/strategy.model.js";
+import { TradeQueueManager } from "../../queue/TradeQueueManager.js";
 
 interface WebhookRequest {
   strategyId: string;

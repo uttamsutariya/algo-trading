@@ -1,9 +1,9 @@
-import { BaseBroker } from "./BaseBroker";
-import { OrderRequest, OrderResponse } from "../types/broker.types";
+import { BaseBroker } from "./BaseBroker.js";
+import { OrderRequest, OrderResponse } from "../types/broker.types.js";
 import axios, { AxiosInstance } from "axios";
-import brokerConfig from "../config/broker.config";
-import { generateAppIdHash } from "../utils/helperFunction";
-import BrokerModel, { FyersCredentials } from "../models/broker.model";
+import brokerConfig from "../config/broker.config.js";
+import { generateAppIdHash } from "../utils/helperFunction.js";
+import BrokerModel, { FyersCredentials } from "../models/broker.model.js";
 
 interface FyersOrderResponse {
   s: string; // Status: "ok" for success, "error" for failure

@@ -1,9 +1,9 @@
 import { Job } from "bullmq";
-import { BaseQueueManager } from "./BaseQueueManager";
-import { queueConfigs } from "./config/queue.config";
-import Strategy from "../models/strategy.model";
-import Instrument from "../models/instruments.model";
-import { getBrokerInstance } from "../utils/broker";
+import { BaseQueueManager } from "./BaseQueueManager.js";
+import { queueConfigs } from "./config/queue.config.js";
+import Strategy from "../models/strategy.model.js";
+import Instrument from "../models/instruments.model.js";
+import { getBrokerInstance } from "../utils/broker.js";
 
 export interface TradeJobData {
   strategyId: string;

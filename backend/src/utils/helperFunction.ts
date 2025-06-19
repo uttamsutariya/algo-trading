@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import BrokerModel from "../models/broker.model";
+import BrokerModel from "../models/broker.model.js";
 
 export function generateAppIdHash(appId: string, secretKey: string): string {
   const combined = `${appId}:${secretKey}`;

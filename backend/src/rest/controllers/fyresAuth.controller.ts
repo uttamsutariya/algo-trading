@@ -1,12 +1,13 @@
 // controllers/fyers.controller.ts
 import { Request, Response } from "express";
 import axios from "axios";
-import BrokerModel from "../../models/broker.model";
-import { generateAppIdHash, getBrokerCredentials } from "../../utils/helperFunction";
-import { FyersCredentials } from "../../models/broker.model";
-import brokerConfig from "../../config/broker.config";
+import BrokerModel from "../../models/broker.model.js";
+import { generateAppIdHash, getBrokerCredentials } from "../../utils/helperFunction.js";
+import { FyersCredentials } from "../../models/broker.model.js";
+import brokerConfig from "../../config/broker.config.js";
 
-require("dotenv").config();
+import dotenv from "dotenv";
+dotenv.config();
 
 const redirect_url = process.env.FYERS_REDIRECT_URL!;
 const FYERS_BASE_URL = brokerConfig.fyers.apiBaseUrl;

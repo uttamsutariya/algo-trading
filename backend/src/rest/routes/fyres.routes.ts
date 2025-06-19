@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { fyersLogin, fyersCallback } from "../controllers/fyresAuth.controller";
+import { fyersLogin, fyersCallback } from "../controllers/fyresAuth.controller.js";
 
 const router = Router();
 
