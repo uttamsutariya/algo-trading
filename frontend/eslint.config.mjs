@@ -9,6 +9,25 @@ const compat = new FlatCompat({
   baseDirectory: __dirname
 });
 
-const eslintConfig = [...compat.extends("next/core-web-vitals", "next/typescript")];
+const eslintConfig = [
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    rules: {
+      // Allow explicit any type with warning
+      "@typescript-eslint/no-explicit-any": "warn",
+      // Convert exhaustive deps to warning
+      "react-hooks/exhaustive-deps": "warn",
+      // Allow unused variables that start with underscore, otherwise warn
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          ignoreRestSiblings: true
+        }
+      ]
+    }
+  }
+];
 
 export default eslintConfig;

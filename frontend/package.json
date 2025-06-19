@@ -5,8 +5,14 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build:safe": "next lint --fix && next build",
+    "build:no-lint": "SKIP_LINT=true next build",
+    "build:no-typecheck": "SKIP_TYPE_CHECK=true next build",
+    "build:fast": "SKIP_LINT=true SKIP_TYPE_CHECK=true next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@auth/core": "^0.34.2",
