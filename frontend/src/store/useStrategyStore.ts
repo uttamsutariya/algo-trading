@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { Strategy } from "@/types/strategy";
-import { mockStrategies } from "@/data/strategies";
 
 type StatusFilter = "all" | "running" | "stopped";
 
@@ -16,7 +15,7 @@ interface StrategyState {
 }
 
 export const useStrategyStore = create<StrategyState>((set: any) => ({
-  strategies: mockStrategies,
+  strategies: [],
   searchQuery: "",
   statusFilter: "all" as StatusFilter,
 
